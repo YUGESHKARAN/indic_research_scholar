@@ -1,0 +1,9 @@
+
+langsmith
+
+python-dotenv
+pinecone
+
+flask
+flask-cors
+pypdf
