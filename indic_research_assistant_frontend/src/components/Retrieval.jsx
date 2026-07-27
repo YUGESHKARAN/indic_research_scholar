@@ -2,7 +2,8 @@ import React, { useState, useMemo } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
-const FLASK_BASE_URL = 'http://127.0.0.1:5000'
+// const FLASK_BASE_URL = 'http://127.0.0.1:5000'
+const FLASK_BASE_URL = 'https://indic-research-scholar.onrender.com'
 
 const LANGUAGES = [
   { code: 'en-IN', label: 'English' },
