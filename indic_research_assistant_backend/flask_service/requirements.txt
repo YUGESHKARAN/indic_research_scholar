@@ -4,6 +4,7 @@ langsmith
 python-dotenv
 pinecone
 
+sarvamai
 flask
 flask-cors
 pypdf
