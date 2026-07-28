@@ -163,7 +163,7 @@ function Landing() {
           </div>
           <Link
             to="/ingest"
-            className="px-6 py-3 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
+            className="px-3 md:px-6 py-1.5 text-sm md:text-base md:py-3 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
                        hover:bg-[#f0b158] transition-colors whitespace-nowrap"
           >
             Upload your first document
