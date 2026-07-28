@@ -17,7 +17,8 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+    // origin: 'http://localhost:5173',
+    origin: "https://indic-research-scholar.vercel.app",
     credentials: true, // required for the httpOnly cookie to be sent/received
   })
 );
@@ -36,10 +37,10 @@ app.use((err, req, res, next) => {
 });
  
 const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log(`Node API running on port ${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Node API running on port ${PORT}`);
+});
 
 
-module.exports = app;
-module.exports.handler = serverless(app);
+// module.exports = app;
+// module.exports.handler = serverless(app);
