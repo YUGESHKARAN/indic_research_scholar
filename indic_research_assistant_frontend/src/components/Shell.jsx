@@ -28,28 +28,28 @@ export function Header({ variant = 'default' }) {
     <header className="border-b border-[#2A2A3D] bg-[#10101B]/90 backdrop-blur sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
-          <span className="w-8 h-8 rounded-md bg-[#E8A33D] text-[#10101B] font-display font-semibold
-                           flex items-center justify-center text-lg">
+          <span className="md:w-8 md:h-8 w-6 h-6 rounded-md bg-[#E8A33D] text-[#10101B] font-display font-semibold
+                           flex items-center justify-center text-sm md:text-lg">
             अ
           </span>
-          <span className="font-body text-sm text-[#F1EEE4] tracking-wide">
-            Indic Research Assistant
+          <span className="font-body text-xs md:text-sm text-[#F1EEE4] tracking-wide">
+            Indic Research <br className='block md:hidden'/> Assistant
           </span>
         </Link>
 
         <div className="flex items-center gap-3">
           {variant === 'default' && user && (
-            <nav className="flex items-center gap-2">
+            <nav className="flex items-center gap-0.5 md:gap-2">
               <Link
                 to="/ingest"
-                className="font-body text-sm px-4 py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                className="font-body text-xs md:text-sm px-2 ppy-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
               >
                 Ingest
               </Link>
               <Link
                 to="/ask"
-                className="font-body text-sm px-4 py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                className="font-body text-xs md:text-sm px-2 ppy-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
               >
                 Ask
@@ -60,7 +60,7 @@ export function Header({ variant = 'default' }) {
           {variant === 'back' && (
             <Link
               to="/"
-              className="font-body text-sm text-[#F1EEE4]/60 hover:text-[#F1EEE4] transition-colors mr-1"
+              className="font-body hidden md:block text-sm text-[#F1EEE4]/60 hover:text-[#F1EEE4] transition-colors mr-1"
             >
               ← Home
             </Link>
@@ -72,14 +72,14 @@ export function Header({ variant = 'default' }) {
             <div className="relative">
               <button
                 onClick={() => setMenuOpen((o) => !o)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#2A2A3D]
+                className="flex items-center gap-2 px-1 md:px-3 py-0.5 md:py-1.5 rounded-md border border-[#2A2A3D]
                            hover:border-[#E8A33D]/50 hover:bg-[#181826] transition-colors"
               >
                 <span className="w-6 h-6 rounded-full bg-[#2A2A3D] text-[#E8A33D] text-xs font-mono
                                  flex items-center justify-center uppercase">
                   {user.name?.[0] || '?'}
                 </span>
-                <span className="font-body text-sm text-[#F1EEE4]">{user.name}</span>
+                <span className="font-body text-sm hidden md:block text-[#F1EEE4]">{user.name}</span>
               </button>
 
               {menuOpen && (

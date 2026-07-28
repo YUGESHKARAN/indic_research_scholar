@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import axios from 'axios'
 import { FontImports, Header } from './Shell'
 import { useAuth } from '../AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 // const FLASK_BASE_URL = 'http://127.0.0.1:5000'
 const FLASK_BASE_URL = 'https://indic-research-scholar.onrender.com'
@@ -14,6 +15,7 @@ function Ingest() {
   const [status, setStatus] = useState('idle')
   const [message, setMessage] = useState('')
   const [result, setResult] = useState(null)
+  const navigate = useNavigate()
 
   const handleFileChange = (e) => {
     const selected = e.target.files[0]
@@ -48,6 +50,12 @@ function Ingest() {
       setStatus('success')
       setResult(res.data)
       setMessage(`Ingested "${res.data.title}" — ${res.data.num_chunks} chunks stored.`)
+
+      // FIXED: Changed setTimeout syntax to a proper callback function
+      setTimeout(() => { 
+        navigate("/ask") 
+      }, 2000) 
+
     } catch (err) {
       setStatus('error')
       const apiError =
@@ -61,7 +69,7 @@ function Ingest() {
       <FontImports />
       <Header variant="back" />
 
-      <div className="flex items-center justify-center px-4 py-16">
+      <div className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
           <div className="mb-8">
             <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-2">
@@ -73,7 +81,7 @@ function Ingest() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-10 md:space-y-10">
             <div>
               <label htmlFor="file" className="block text-sm text-[#F1EEE4]/70 mb-1">
                 Document
@@ -129,8 +137,9 @@ function Ingest() {
           </form>
 
           {status === 'loading' && (
-            <p className="text-xs text-[#F1EEE4]/40 mt-3">
+            <p className="text-xs text-[#F1EEE4]/40  animate-pulse mt-3">
               OCR + embedding runs synchronously — this can take a bit for image-heavy pages.
+              Mean time have a cup of coffee☕...
             </p>
           )}
 

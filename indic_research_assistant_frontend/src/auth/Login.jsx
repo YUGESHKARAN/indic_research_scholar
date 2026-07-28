@@ -32,7 +32,7 @@ function Login() {
       <FontImports />
       <Header variant="back" />
 
-      <div className="flex items-center justify-center px-4 py-16">
+      <div className="flex items-center mt-16 justify-center px-6 py-16">
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-2">
@@ -44,7 +44,7 @@ function Login() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm text-[#F1EEE4]/70 mb-1">
                 Email
