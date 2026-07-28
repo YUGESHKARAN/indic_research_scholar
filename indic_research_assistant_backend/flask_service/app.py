@@ -9,8 +9,8 @@ from pipeline.tts_service import get_audio
 app = Flask(__name__)
 
 CORS(app, resources={
-    r"/ask": {"origins":["http://localhost:5173"]},
-    r"/ingest": {"origins":["http://localhost:5173"]}
+    r"/ask": {"origins":["https://indic-research-scholar.vercel.app", "http://localhost:5173"]},
+    r"/ingest": {"origins":["https://indic-research-scholar.vercel.app", "http://localhost:5173"]}
 })
 
 
