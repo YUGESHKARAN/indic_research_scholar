@@ -1,9 +1,9 @@
 
 langsmith
-
+requests
 python-dotenv
 pinecone
-
+requests
 sarvamai
 flask
 flask-cors

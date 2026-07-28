@@ -1,9 +1,9 @@
-
 import os
 import zipfile
 import tempfile
 
 from utils.config import sarvam_client
+from utils.node_client import register_doc_with_node
 from pipeline.ingestion import ingest_document
 
 MAX_PAGES = 10
@@ -96,4 +96,14 @@ def process_and_ingest(file_storage, email: str, title: str = None) -> dict:
         raise RuntimeError("No text could be extracted from the document.")
 
     # ingest_document() is pure: chunk -> embed -> upsert. No file/OCR logic in it.
-    return ingest_document(title=title, content=extracted_text, email=email)
+    result = ingest_document(title=title, content=extracted_text, email=email)
+
+    # Push to Node so it shows up in the user's doc library. Soft-fail: the
+    # Pinecone ingest already succeeded, so a Node/network hiccup here should
+    # not undo it — surface the sync status to the caller instead.
+    sync_result = register_doc_with_node(email=email, doc_id=result["doc_id"], title=result["title"])
+    result["library_synced"] = sync_result["synced"]
+    if not sync_result["synced"]:
+        result["library_sync_error"] = sync_result["reason"]
+
+    return result

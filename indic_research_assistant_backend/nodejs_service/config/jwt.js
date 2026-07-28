@@ -1,0 +1,27 @@
+const jwt = require('jsonwebtoken');
+require("dotenv").config()
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not set in environment variables');
+}
+
+const signToken = (payload) => {
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+};
+
+const verifyToken = (token) => {
+  return jwt.verify(token, JWT_SECRET);
+};
+
+// httpOnly cookie — 7 days to match default token expiry, adjust together if you change JWT_EXPIRES_IN
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
+module.exports = { signToken, verifyToken, cookieOptions };

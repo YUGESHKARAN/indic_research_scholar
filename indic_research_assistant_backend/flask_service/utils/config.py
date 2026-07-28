@@ -24,3 +24,6 @@ def build_response(
         "key_workds": key_workds
     }
 
+NODE_BASE_URL = os.getenv("NODE_BASE_URL", "http:localhost:3000")
+NODE_INTERNAL_DOCS_PATH = os.getenv("NODE_INTERNAL_DOCS_PATH", "/api/internal/docs")
+INTERNAL_API_KEY = os.getenv("INTERNAL_API_KEY")
