@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     // origin: 'http://localhost:5173',
-    origin: "https://indic-research-scholar.vercel.app",
+    origin: ["http://localhost:5173", "https://indic-research-scholar.vercel.app"],
     credentials: true, // required for the httpOnly cookie to be sent/received
   })
 );
