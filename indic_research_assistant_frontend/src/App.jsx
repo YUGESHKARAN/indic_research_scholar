@@ -13,9 +13,10 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+       <Analytics/>
         <Routes>
+
           
-           <Analytics/>
 
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
