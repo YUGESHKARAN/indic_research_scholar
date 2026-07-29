@@ -1,0 +1,14 @@
+{
+  "name": "Indic Research Assistant",
+  "short_name": "Indic Research Assistant",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#E8A33D",
+  "background_color": "#10101B",
+  "display": "standalone"
+}
