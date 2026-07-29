@@ -21,8 +21,7 @@
 
 
 
-Upload a research paper, ask questions about it, get answers in your own Indic language, grounded only in that document, with key metrics surfaced alongside the answer.
-Built for students, scholars, and researchers who understand dense academic English better in Hindi, Tamil, Telugu, or one of 8+ other Indian languages.
+An AI research assistant that lets students, scholars, and researchers upload academic papers and understand them in their own Indic language. It retrieves grounded answers straight from the uploaded document, no hallucinated content and surfaces key metrics and findings alongside each response. Available in Hindi, Tamil, Telugu, and 8+ other Indian languages, with optional voice output.
 
 ---
 
