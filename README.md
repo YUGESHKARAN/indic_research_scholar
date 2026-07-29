@@ -1,6 +1,6 @@
 <div
   align="center">
-  <img src="./assets/indic_resesrch_assistant_logo.png" width="190" height="100" alt="indic_research_assistant"> 
+  <img src="./assets/indic_resesrch_assistant_logo.png" width="200" height="120" alt="indic_research_assistant"> 
 </div>
 
 
@@ -19,13 +19,9 @@
 
 </div>
 
-<div align="center">
-  <h3> Indic Research Assistant</h3>
-</div>
 
 
-Upload a research paper, ask questions about it, get answers in your own Indic language — grounded only in that document, with key metrics surfaced alongside the answer.
-
+Upload a research paper, ask questions about it, get answers in your own Indic language, grounded only in that document, with key metrics surfaced alongside the answer.
 Built for students, scholars, and researchers who understand dense academic English better in Hindi, Tamil, Telugu, or one of 8+ other Indian languages.
 
 ---
