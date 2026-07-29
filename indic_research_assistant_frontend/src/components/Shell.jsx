@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthContext'
+import { BsGithub } from 'react-icons/bs'
 
 export function FontImports() {
   return (
@@ -57,6 +58,8 @@ export function Header({ variant = 'default' }) {
             </nav>
           )}
 
+          
+
           {variant === 'back' && (
             <Link
               to="/"
@@ -65,6 +68,13 @@ export function Header({ variant = 'default' }) {
               ← Home
             </Link>
           )}
+
+           <a href="https://github.com/YUGESHKARAN/indic_research_scholar.git" aria-label="GitHub" className="h-6 w-6 grid place-items-center rounded-lg text-muted-foreground hover:text-foreground transition">
+              {/* <Github className="h-4 w-4 text-black" /> */}
+
+              <BsGithub className="h-5 w-5 text-white" />
+
+            </a>
 
           {loading ? (
             <div className="w-24 h-8 rounded-md bg-[#181826] animate-pulse" />
