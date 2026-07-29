@@ -1,6 +1,6 @@
 <div
   align="center">
-  <img src="./assets/indic_resesrch_assistant_logo.png" width="220" height="150" alt="indic_research_assistant"> 
+  <img src="./assets/indic_resesrch_assistant_logo.png" width="200" height="120" alt="indic_research_assistant"> 
 </div>
 
 <br/>
