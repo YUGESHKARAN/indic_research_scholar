@@ -7,7 +7,7 @@
 
 <div align="center">
   
-![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-OCR_·_LLM_·_TTS-E8A33D?style=flat-square)
+![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-OCR_·_LLM_-E8A33D?style=flat-square)
 ![Flask](https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
