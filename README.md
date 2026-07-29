@@ -3,9 +3,26 @@
   <img src="./assets/indic_resesrch_assistant_logo.png" width="300" height="100" alt="indic_research_assistant"> 
 </div>
 
-<div align="left">
+
+
+<div align="center">
+  
+![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-OCR_·_LLM_·_TTS-E8A33D?style=flat-square)
+![Flask](https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat-square&logo=mongodb&logoColor=white)
+![Pinecone](https://img.shields.io/badge/Pinecone-Vector_DB-1C1C1C?style=flat-square)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)
+
+
+</div>
+
+<div align="center">
   <h3> Indic Research Assistant</h3>
 </div>
+
 
 Upload a research paper, ask questions about it, get answers in your own Indic language — grounded only in that document, with key metrics surfaced alongside the answer.
 
