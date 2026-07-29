@@ -7,12 +7,16 @@ import Ingest from '../src/components/Ingest'
 import Retrieval from '../src/components/Retrieval'
 import Login from '../src/auth/Login'
 import Register from '../src/auth/Register'
+import { Analytics } from "@vercel/analytics/react"
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          
+           <Analytics/>
+
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
