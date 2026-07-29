@@ -1,4 +1,11 @@
-# Indic Research Assistant
+<div
+  align="center">
+  <img src="./assets/indic_resesrch_assistant_logo.png" width="300" height="100" alt="indic_research_assistant"> 
+</div>
+
+<div align="left">
+  <h3> Indic Research Assistant</h3>
+</div>
 
 Upload a research paper, ask questions about it, get answers in your own Indic language — grounded only in that document, with key metrics surfaced alongside the answer.
 
