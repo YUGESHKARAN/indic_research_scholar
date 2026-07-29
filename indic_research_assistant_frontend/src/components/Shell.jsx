@@ -116,14 +116,14 @@ export function Header({ variant = 'default' }) {
             <div className="flex items-center gap-2">
               <Link
                 to="/login"
-                className="font-body text-sm px-4 py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                className="font-body text-xs  md:text-sm md:px-4 px-2 py-1.5 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
               >
                 Log in
               </Link>
               <Link
                 to="/register"
-                className="font-body text-sm px-4 py-2 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
+                className="font-body text-xs  md:text-sm md:px-4 px-2 py-1.5 md:py-2 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
                            hover:bg-[#f0b158] transition-colors"
               >
                 Register
