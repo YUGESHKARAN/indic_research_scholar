@@ -21,14 +21,14 @@
 
 
 
-An AI research assistant that lets students, scholars, and researchers upload academic papers and understand them in their own Indic language. It retrieves grounded answers straight from the uploaded document, no hallucinated content and surfaces key metrics and findings alongside each response. Available in Hindi, Tamil, Telugu, and 8+ other Indian languages, with optional voice output.
+An AI research assistant that lets students, scholars, and researchers upload academic papers and understand them in their own Indic language. It retrieves grounded answers straight from the uploaded document, no hallucinated content and surfaces key metrics and findings alongside each response. Available in Hindi, Tamil, Telugu, and 8+ other Indian languages - powered by **Sarvam 105B** flagship model.
 
 ---
 
 ## Key Features
 
 - Explore findings in your native language.
-- OCR that reliably parses data even from blurred or low-quality scans 💪🏻.
+- OCR (**Sarvam Vision** model) that reliably parses data even from blurred or low-quality scans 💪🏻.
 - Do deep, focused research on any topic.
 - Upload once, explore for a lifetime — manage your docs and findings anytime.
 
