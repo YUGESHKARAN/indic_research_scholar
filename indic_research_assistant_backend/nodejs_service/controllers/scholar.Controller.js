@@ -1,6 +1,20 @@
 
 const Scholar = require('../models/scholarSchema');
 const { signToken, cookieOptions } = require('../config/jwt');
+require('dotenv').config();
+
+const nodemailer = require("nodemailer");
+const otpGenerator = require("otp-generator");
+
+
+ // Send OTP via email
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_PROVIDER,
+      auth: {
+        user: process.env.EMAIL_USER, // Replace with your email
+        pass: process.env.EMAIL_PASS, // Replace with your email password
+      },
+    });
 
 const register = async (req, res) => {
   try {
@@ -64,6 +78,91 @@ const logout = (_req, res) => {
   return res.status(200).json({ message: 'Logged out' });
 };
 
+
+const sendOTP = async(req, res) => {
+
+  const {email } = req.body;
+
+  try{
+
+    const user = await Scholar.findOne({email: {$eq: email}});
+
+    if(!user){
+      return res.status(404).json({message:"User not found !"});
+    }
+
+     // Generate a 6-digit OTP
+    const otp = otpGenerator.generate(6, {
+      digits: true,
+      upperCaseAlphabets: false,
+      lowerCaseAlphabets: false,
+      specialChars: false,
+    });
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // OTP expires in 15 minutes
+
+    user.otp = otp;
+    user.otpExpiresAt = otpExpiresAt;
+    await user.save();
+
+    // Send OTP via email
+    const transporter = nodemailer.createTransport({
+      service: process.env.EMAIL_PROVIDER,
+      auth: {
+        user: process.env.EMAIL_USER, // Replace with your email
+        pass: process.env.EMAIL_PASS, // Replace with your email password
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL_PROVIDER,
+      to: email,
+      subject: "Password Reset OTP",
+      text: `Your OTP for password reset is ${otp}. It is valid for 15 minutes.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "OTP sent successfully" });
+
+
+    
+  }
+
+  catch(err){
+    res.status(500).json({message:err.message})
+  }
+}
+
+const resetPassword =async(req, res) => {
+
+  const {email, newPassword, otp} = req.body;
+  try{
+    const user = await Scholar.findOne({email:{$eq:email}});
+
+    if(!user){
+      return res.status(404).json({message:"user not found !"})
+    }
+
+    if(!email || !newPassword || !otp){
+      return res.status(401).json({message:"email, new-password and otp required !"})
+    }
+
+    if(user.otp !== otp || user.otpExpiresAt < new Date()){
+      return res.status(400).json({message:"invalid or expired otp"});
+    }
+
+    user.password = newPassword;
+    user.otp = null;
+    user.otpExpiresAt = null;
+    await user.save();
+    res.status(200).json({message:"password resseted successfully !"})
+  }
+  catch(err)
+  {
+    res.status(500).json({message:err.message})
+  }
+}
+
 const me = async (req, res) => {
   const user = await Scholar.findById(req.user.id);
   if (!user) {
@@ -72,4 +171,4 @@ const me = async (req, res) => {
   return res.status(200).json({ user });
 };
 
-module.exports = { register, login, logout, me };
+module.exports = { register, login, logout, sendOTP, resetPassword, me };

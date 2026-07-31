@@ -45,6 +45,9 @@ const scholarSchema = new mongoose.Schema(
       type: [docRefSchema],
       default: [],
     },
+
+    otp: { type: String },
+    otpExpiresAt: { type: Date   },
   },
   { timestamps: true }
 );
