@@ -2,7 +2,7 @@
 // import { Link, useNavigate } from 'react-router-dom'
 // import { FontImports, Header } from '../components/Shell'
 // import { useAuth } from '../AuthContext'
-// import ForgotPasswordModal from '../components/Forgotpasswordmodal'
+// import ForgotPassword from '../components/ForgotPassword'
 
 // const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http://127.0.0.1:3000'
 
@@ -150,7 +150,7 @@
 //         </div>
 //       </div>
 
-//       {forgotOpen && <ForgotPasswordModal onClose={() => setForgotOpen(false)} />}
+//       {forgotOpen && <ForgotPassword onClose={() => setForgotOpen(false)} />}
 //     </div>
 //   )
 // }
@@ -162,7 +162,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FontImports, Header } from '../components/Shell'
 import { useAuth } from '../AuthContext'
-import ForgotPasswordModal from '../components/ForgotPasswordModal'
+import ForgotPassword from '../components/ForgotPassword'
 
 const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http:/localhost:3000'
 // const NODE_BASE_URL = 'http://localhost:3000'
@@ -328,7 +328,7 @@ function Login() {
         </div>
       </div>
 
-      {forgotOpen && <ForgotPasswordModal onClose={() => setForgotOpen(false)} />}
+      {forgotOpen && <ForgotPassword onClose={() => setForgotOpen(false)} />}
     </div>
   )
 }

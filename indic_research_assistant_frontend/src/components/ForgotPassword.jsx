@@ -3,7 +3,7 @@ import axiosInstance, { setUnauthorizedHandler } from '../instances/axiosInstanc
 
 const OTP_BASE = '/api/scholar'
 
-function ForgotPasswordModal({ onClose }) {
+function ForgotPassword({ onClose }) {
   const [step, setStep] = useState('email') // email | otp | success
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
@@ -182,4 +182,4 @@ function ForgotPasswordModal({ onClose }) {
   )
 }
 
-export default ForgotPasswordModal
+export default ForgotPassword
