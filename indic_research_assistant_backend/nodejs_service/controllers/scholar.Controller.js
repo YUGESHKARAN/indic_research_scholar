@@ -172,3 +172,28 @@ const me = async (req, res) => {
 };
 
 module.exports = { register, login, logout, sendOTP, resetPassword, me };
+
+// Called after Passport's Google strategy succeeds (req.user is set by done(null, user))
+const googleCallback = (req, res) => {
+  const user = req.user;
+  const token = signToken({ id: user._id, email: user.email });
+ 
+  res.cookie('token', token, cookieOptions);
+  res.redirect(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
+};
+ 
+module.exports.googleCallback = googleCallback;
+ 
+// Called by the custom callback route (not passport's failureRedirect) so we
+// can pass a *specific* reason back to the frontend, not just a generic failure.
+const githubCallback = (user) => {
+  // return signToken({ id: user._id, email: user.email });
+  const token = signToken({ id: user._id, email: user.email });
+
+  console.log("token", token)
+ 
+  res.cookie('token', token, cookieOptions);
+  res.redirect(process.env.CLIENT_ORIGIN || 'http://localhost:5173');
+};
+ 
+module.exports.githubCallback = githubCallback;

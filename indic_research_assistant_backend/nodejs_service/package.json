@@ -22,6 +22,8 @@
     "mongoose": "^9.8.1",
     "nodemailer": "^9.0.3",
     "otp-generator": "^4.0.1",
+    "passport": "^0.7.0",
+    "passport-github2": "^0.1.12",
     "serverless-http": "^4.0.0"
   },
   "devDependencies": {
