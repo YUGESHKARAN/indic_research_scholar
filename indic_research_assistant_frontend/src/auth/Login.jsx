@@ -162,7 +162,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { FontImports, Header } from '../components/Shell'
 import { useAuth } from '../AuthContext'
-import ForgotPasswordModal from '../components/ForgotPasswordmodal'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
 
 const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http:/localhost:3000'
 // const NODE_BASE_URL = 'http://localhost:3000'
