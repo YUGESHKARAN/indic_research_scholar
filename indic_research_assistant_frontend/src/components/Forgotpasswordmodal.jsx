@@ -12,6 +12,7 @@ function ForgotPasswordModal({ onClose }) {
   const [message, setMessage] = useState('')
 
   const handleSendOtp = async (e) => {
+    
     e.preventDefault()
     setStatus('loading')
     setMessage('')

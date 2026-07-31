@@ -18,8 +18,7 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 router.get('/github', passport.authenticate('github', { session: false }));
  
 // Step 2: GitHub redirects back here. Using a custom callback (not
-// failureRedirect) so a specific rejection reason (e.g. no public email)
-// can be passed to the frontend as a query param, not just a generic failure.
+
 router.get('/github/callback', (req, res, next) => {
   passport.authenticate('github', { session: false }, (err, user, info) => {
     if (err) {
