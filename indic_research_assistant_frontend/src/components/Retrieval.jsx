@@ -131,8 +131,7 @@ function Retrieval() {
     }
   }
 
-
-  console.log("docs", docs)
+  // console.log("docs", docs)
   return (
     // <div className="min-h-screen bg-[#10101B] text-[#F1EEE4] font-body">
     //   <FontImports />
@@ -387,10 +386,11 @@ function Retrieval() {
                 className="space-y-4 md:space-y-8 rounded-lg border border-[#2A2A3D] bg-[#181826] p-5"
               >
                 {/* Document combobox */}
+              
                 <div ref={comboRef} className="relative">
-                  <label htmlFor="docSearch" className="block text-sm text-[#F1EEE4]/70 mb-1">
-                    Document
-                  </label>
+                 <p className="font-mono text-[10px] tracking-[0.2em] text-[#E8A33D]/70 uppercase mb-2">
+                    01 — Select Document
+                  </p>
                   <div className="relative">
                     <input
                       id="docSearch"
@@ -466,7 +466,7 @@ function Retrieval() {
                   )}
                 </div>
 
-                <div>
+                {/* <div>
                   <label htmlFor="targetLang" className="block text-sm text-[#F1EEE4]/70 mb-1">
                     Answer in
                   </label>
@@ -483,9 +483,36 @@ function Retrieval() {
                       </option>
                     ))}
                   </select>
+                </div> */}
+                <div>
+                  <p className="font-mono text-[10px] tracking-[0.2em] text-[#E8A33D]/70 uppercase mb-2.5">
+                    02 — Answer in
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {LANGUAGES.map((lang) => {
+                      const active = targetLang === lang.code
+                      return (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={() => setTargetLang(lang.code)}
+                          className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all border
+                            ${active
+                              ? 'bg-[#E8A33D] text-[#10101B] border-[#E8A33D]'
+                              : 'bg-transparent text-[#F1EEE4]/60 border-[#2A2A3D] hover:border-[#E8A33D]/40 hover:text-[#F1EEE4]'
+                            }`}
+                        >
+                          {lang.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 <div>
+                   <p className="font-mono text-[10px] tracking-[0.2em] text-[#E8A33D]/70 uppercase mb-2.5">
+                    03 — Your question
+                  </p>
                   <label htmlFor="query" className="block text-sm text-[#F1EEE4]/70 mb-1">
                     Question
                   </label>
@@ -504,7 +531,7 @@ function Retrieval() {
                 <button
                   type="submit"
                   disabled={status === 'loading'}
-                  className="w-full rounded-md bg-[#E8A33D] text-[#10101B] py-2.5 text-sm
+                  className="w-full rounded-2xl bg-[#E8A33D] text-[#10101B] py-2.5 text-sm
                              font-medium hover:bg-[#f0b158] transition-colors disabled:opacity-50
                              disabled:cursor-not-allowed"
                 >
