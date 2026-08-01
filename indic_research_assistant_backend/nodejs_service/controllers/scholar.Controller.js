@@ -52,7 +52,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log("login called", req.body);
+    // console.log("login called", req.body);
 
     if (!email || !password) {
       return res.status(400).json({ error: "email and password are required" });
@@ -84,7 +84,7 @@ const login = async (req, res) => {
 };
 
 const logout = (_req, res) => {
-  res.clearCookie("token", { ...cookieOptions, maxAge: 0 });
+  res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: 0 });
   return res.status(200).json({ message: "Logged out" });
 };
 
