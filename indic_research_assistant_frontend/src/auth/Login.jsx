@@ -241,7 +241,7 @@ function Login() {
             </div>
           )}
 
-          {/* <button
+          <button
             type="button"
             onClick={handleGitHubLogin}
             className="w-full flex items-center justify-center gap-2.5 rounded-md border border-[#2A2A3D]
@@ -250,13 +250,13 @@ function Login() {
           >
             <GitHubIcon />
             Continue with GitHub
-          </button> */}
+          </button> 
 
-          {/* <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-5">
             <div className="h-px flex-1 bg-[#2A2A3D]" />
             <span className="text-xs text-[#F1EEE4]/30 font-mono">or</span>
             <div className="h-px flex-1 bg-[#2A2A3D]" />
-          </div> */}
+          </div> 
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

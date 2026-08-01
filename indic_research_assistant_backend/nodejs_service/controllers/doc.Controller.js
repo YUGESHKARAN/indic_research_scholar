@@ -3,7 +3,7 @@ const Scholar = require('../models/scholarSchema');
 // GET /api/docs — the logged-in user's doc history (frontend dashboard)
 const getMyDocs = async (req, res) => {
   try {
-    console.log("getMyDocs called", req.user)
+    // console.log("getMyDocs called", req.user)
     const user = await Scholar.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });

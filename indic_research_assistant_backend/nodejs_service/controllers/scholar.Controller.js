@@ -1,5 +1,5 @@
 const Scholar = require("../models/scholarSchema");
-const { signToken, cookieOptions } = require("../config/jwt");
+const { signToken, cookieOptions , COOKIE_NAME} = require("../config/jwt");
 require("dotenv").config();
 
 const nodemailer = require("nodemailer");
@@ -40,7 +40,7 @@ const register = async (req, res) => {
     const user = await Scholar.create({ name, email, password });
     const token = signToken({ id: user._id, email: user.email });
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie(COOKIE_NAME, token, cookieOptions);
     return res.status(201).json({ user, token });
   } catch (err) {
     return res
@@ -71,7 +71,7 @@ const login = async (req, res) => {
     }
 
     const token = signToken({ id: user._id, email: user.email });
-    res.cookie("token", token, cookieOptions);
+    res.cookie(COOKIE_NAME, token, cookieOptions);
 
     // toJSON transform strips the password automatically
     return res.status(200).json({ user, token });
@@ -179,20 +179,20 @@ const googleCallback = (req, res) => {
   const user = req.user;
   const token = signToken({ id: user._id, email: user.email });
 
-  res.cookie("token", token, cookieOptions);
+  // res.cookie(COOKIE_NAME, token, cookieOptions);
   res.redirect(process.env.CLIENT_ORIGIN || "http://localhost:5173");
 };
 
 module.exports.googleCallback = googleCallback;
 
 const githubCallback = (user) => {
-  // return signToken({ id: user._id, email: user.email });
+  return signToken({ id: user._id, email: user.email });
   const token = signToken({ id: user._id, email: user.email });
 
-  console.log("token", token);
+  // console.log("token", token);
 
-  res.cookie("token", token, cookieOptions);
-  res.redirect(process.env.CLIENT_ORIGIN || "http://localhost:5173");
+  // res.cookie(COOKIE_NAME, token, cookieOptions);
+  // res.redirect(process.env.CLIENT_ORIGIN || "http://localhost:5173");
 };
 
 module.exports.githubCallback = githubCallback;
