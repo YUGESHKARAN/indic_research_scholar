@@ -7,7 +7,7 @@ def get_audio(text):
     try:
         for chunk in client.text_to_speech.convert_stream(
             text=text,
-            target_language_code="hi-IN",
+            language_code="hi-IN",
             speaker="shubh",
             model="bulbul:v3",
             output_audio_codec="mp3",
