@@ -1,14 +1,16 @@
 const { verifyToken } = require('../config/jwt');
 
 const authenticate = (req, res, next) => {
-    console.log("Cookies:", req.cookies);
-console.log("Headers:", req.headers.cookie);
+//     console.log("Cookies:", req.cookies);
+// console.log("Headers:", req.headers.cookie);
+const COOKIE_NAME = "indic_research_token";
 
   const bearer = req.headers.authorization?.startsWith('Bearer ')
     ? req.headers.authorization.split(' ')[1]
     : null;
 
-  const token = req.cookies?.token || bearer;
+  // const token = req.cookies?.token || bearer;
+  const token = req.cookies?.[COOKIE_NAME] || bearer;  
 
   if (!token) {
     return res.status(401).json({ error: 'Not authenticated' });

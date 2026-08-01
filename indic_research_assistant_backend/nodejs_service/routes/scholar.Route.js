@@ -5,6 +5,8 @@ const passport = require('../config/passport');
 const authenticate = require('../middleware/authMiddleware');
 const { register, login, logout, sendOTP, resetPassword, me, githubCallback } = require('../controllers/scholar.Controller');
 
+const { signToken, cookieOptions , COOKIE_NAME} = require("../config/jwt");
+
 router.post('/register', register);
 router.post('/login', login);
 router.post("/send-otp",sendOTP);
@@ -22,15 +24,17 @@ router.get('/github', passport.authenticate('github', { session: false }));
 router.get('/github/callback', (req, res, next) => {
   passport.authenticate('github', { session: false }, (err, user, info) => {
     if (err) {
+      console.log("github login error", err.message)
       return res.redirect(`${CLIENT_ORIGIN}/login?error=github_auth_failed`);
     }
+
     if (!user) {
       const reason = info?.reason || 'github_auth_failed';
       return res.redirect(`${CLIENT_ORIGIN}/login?error=${reason}`);
     }
  
     const token = githubCallback(user);
-    res.cookie('token', token, cookieOptions);
+    res.cookie(COOKIE_NAME, token, cookieOptions);
     return res.redirect(CLIENT_ORIGIN);
   })(req, res, next);
 });

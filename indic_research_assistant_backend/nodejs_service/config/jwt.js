@@ -48,16 +48,28 @@ const verifyToken = (token) => {
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// const cookieOptions = {
+//   httpOnly: true,
+//   secure: isProduction,              // HTTPS only in production
+//   sameSite: isProduction ? 'none' : 'lax', // Required for cross-origin cookies
+//   path: '/',
+//   maxAge: 7 * 24 * 60 * 60 * 1000,
+// };
+// config/jwt.js
+
 const cookieOptions = {
   httpOnly: true,
-  secure: isProduction,              // HTTPS only in production
-  sameSite: isProduction ? 'none' : 'lax', // Required for cross-origin cookies
-  path: '/',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
+
+const COOKIE_NAME = 'indic_research_token'; // was 'token' — too generic for local dev with multiple projects
+
 
 module.exports = {
   signToken,
   verifyToken,
   cookieOptions,
+  COOKIE_NAME
 };
