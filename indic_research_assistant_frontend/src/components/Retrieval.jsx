@@ -259,14 +259,14 @@ function Retrieval() {
                   <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-400">
                     Workspace controls
                   </p>
-                  <h2 className="mt-2 text-xl font-semibold text-white">Set the context</h2>
+                  <h2 className="md:mt-2 mt-1 text-lg md:text-xl font-semibold text-white">Set the context</h2>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSidebarOpen(false)}
                   className="rounded-full border border-white/10 bg-white/5 p-2 text-slate-200 transition hover:border-amber-400/40 hover:text-white lg:hidden"
                 >
-                  <FiX size={16} />
+                  <FiX size={12} />
                 </button>
               </div>
 
@@ -390,7 +390,7 @@ function Retrieval() {
                   <p className="md:text-[11px] text-[9px] uppercase tracking-[0.35em] text-amber-400">Conversation agent</p>
                   <h3 className="md:text-lg text-sm font-semibold text-white">Ask, review, and iterate</h3>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 truncate text-xs md:text-sm text-slate-300">
+                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 truncate text-[9px] md:text-sm text-slate-300">
                   {selectedDoc ? `Context: ${selectedDoc.title}` : 'Select a document to begin'}
                 </div>
               </div>
