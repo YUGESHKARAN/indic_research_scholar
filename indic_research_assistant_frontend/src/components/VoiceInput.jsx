@@ -88,7 +88,7 @@ export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceS
   }
 
   return (
-    <div className="flex relative xl:flex-wrap items-center gap-3">
+    <div className="flex relative  flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={(event) => {
@@ -108,7 +108,7 @@ export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceS
       >
         {recording ? '⏹ Stop' : '🎙 Voice'}
       </button>
-   <p className='absolute xl:static bottom-9 w-40'>
+   <p className='absolute xl:static bottom-9 max-w-40'>
       {status === 'recording' && <span className="text-[10px] md:text-sm text-rose-300">● Recording…</span>}
       {status === 'transcribing' && <span className="text-[10px] md:text-sm text-amber-300">⏳ Transcribing…</span>}
       {status === 'done' && <span className="text-[10px] md:text-sm text-emerald-300">✓ Done</span>}
