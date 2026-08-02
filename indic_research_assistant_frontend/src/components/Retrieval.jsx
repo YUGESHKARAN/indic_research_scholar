@@ -479,12 +479,12 @@ function Retrieval() {
                     className="h-14 w-full resize-none border-0 bg-transparent px-2 pb-2 text-sm text-white outline-none placeholder:text-slate-500"
                   />
 
-                  <div className="mt-2 flex flex-col gap-3 rounded-[18px] border border-white/10  bg-slate-900/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="mt-2 flex justify-between md:justify-none xl:flex-col gap-1.5 md:gap-3 rounded-[18px] border border-white/10  bg-slate-900/80 px-1 md:px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400">
                       <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-amber-300">
                         Grounded answer
                       </span>
-                      <span>Shift + Enter for a new line</span>
+                      <span className='text-[9px] hidden'>Shift + Enter for a new line</span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -494,7 +494,7 @@ function Retrieval() {
                         onResult={handleVoiceResult}
                         onVoiceStart={() => setQuery('')}
                       />
-                      {result?.content && (
+                      {/* {result?.content && (
                         <button
                           type="button"
                           onClick={handleCopy}
@@ -502,13 +502,13 @@ function Retrieval() {
                         >
                           {copied ? '✓ Copied' : 'Copy'}
                         </button>
-                      )}
+                      )} */}
                       <button
                         type="submit"
                         disabled={status === 'loading'}
-                        className="flex items-center gap-2 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex items-center gap-2 rounded-full bg-amber-400  px-3 py-1.5 text-xs md:font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <FiSend size={14} />
+                        <FiSend size={12} />
                         {status === 'loading' ? 'Thinking…' : 'Send'}
                       </button>
                     </div>
