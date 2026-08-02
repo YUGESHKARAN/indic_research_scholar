@@ -385,17 +385,17 @@ function Retrieval() {
             </aside>
 
             <main className="overflow-hidden md:h-[600px] rounded-md flex flex-col justify-between  border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl">
-              <div className="flex flex-wrap items-center justify-between border-b border-white/10 px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between border-b border-white/10 px-3 md:px-5 py-4">
                 <div>
-                  <p className="text-[11px] uppercase tracking-[0.35em] text-amber-400">Conversation agent</p>
-                  <h3 className="text-lg font-semibold text-white">Ask, review, and iterate</h3>
+                  <p className="md:text-[11px] text-[9px] uppercase tracking-[0.35em] text-amber-400">Conversation agent</p>
+                  <h3 className="md:text-lg text-sm font-semibold text-white">Ask, review, and iterate</h3>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-sm text-slate-300">
+                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 truncate text-xs md:text-sm text-slate-300">
                   {selectedDoc ? `Context: ${selectedDoc.title}` : 'Select a document to begin'}
                 </div>
               </div>
 
-              <div className="h-[300px] overflow-x-hidden overflow-y-auto scrollbar-hide px-4 py-4 sm:px-5">
+              <div className="h-[400px] xl:h-[300px] overflow-x-hidden overflow-y-auto scrollbar-hide px-4 py-4 sm:px-5">
                 {conversation.length === 0 && status === 'idle' && (
                   <div className="flex h-full h-[250px] flex-col items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-gradient-to-br from-white/5 to-transparent px-6 py-10 text-center">
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/12 text-3xl text-amber-400">
@@ -410,17 +410,17 @@ function Retrieval() {
 
                 {conversation.map((entry) => (
                   <div key={entry.id} className={`mb-3 flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[92%] rounded-[22px] border px-4 py-3 shadow-sm sm:max-w-[80%] ${
+                    <div className={`max-w-[92%] rounded-[22px] border px-3 md:px-4 py-2 md:py-3 shadow-sm sm:max-w-[80%] ${
                       entry.role === 'user'
                         ? 'border-amber-400/20 bg-amber-400/10 text-white'
                         : entry.isError
                           ? 'border-rose-400/20 bg-rose-500/10 text-rose-100'
                           : 'border-white/10 bg-slate-900/90 text-slate-100'
                     }`}>
-                      <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                      <div className="md:mb-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
                         {entry.role === 'user' ? 'You' : 'Assistant'}
                       </div>
-                      <p className="whitespace-pre-wrap text-sm leading-7">{entry.content}</p>
+                      <p className="whitespace-pre-wrap text-xs md:text-sm leading-7">{entry.content}</p>
                       {entry.role === 'assistant' && (
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                           {entry.keyWords?.length > 0 && (
@@ -459,12 +459,12 @@ function Retrieval() {
               </div>
 
               {message && (
-                <div className="mx-4 mb-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 sm:mx-5">
+                <div className="md:mx-4 mx-2 mb-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 sm:mx-5">
                   {message}
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="bg-slate-950/70 px-4 py-4 sm:px-5">
+              <form onSubmit={handleSubmit} className="bg-slate-950/70 px-2 md:px-4 py-4 sm:px-5">
                 <div className="rounded-[24px] border border-white/10  bg-slate-950/70 p-3 md:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                   <label className="mb-2 block px-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
                     Ask a question
@@ -479,15 +479,15 @@ function Retrieval() {
                     className="h-14 w-full resize-none border-0 bg-transparent px-2 pb-2 text-sm text-white outline-none placeholder:text-slate-500"
                   />
 
-                  <div className="mt-2 flex flex-col gap-3 rounded-[18px] border border-white/10  bg-slate-900/80 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <div className="mt-2 flex  justify-between md:justify-none gap-1.5 md:gap-3 rounded-[18px] border border-white/10  bg-slate-900/80 px-1 md:px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400">
                       <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-amber-300">
                         Grounded answer
                       </span>
-                      <span>Shift + Enter for a new line</span>
+                      <span className='md:block hidden'>Shift + Enter for a new line</span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex  items-center gap-2">
                       <VoiceInput
                         selectedDoc={selectedDoc}
                         targetLang={targetLang}
@@ -506,9 +506,9 @@ function Retrieval() {
                       <button
                         type="submit"
                         disabled={status === 'loading'}
-                        className="flex items-center gap-2 rounded-full bg-amber-400 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex items-center gap-2 rounded-full bg-amber-400  px-3 py-1.5 text-xs md:font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <FiSend size={14} />
+                        <FiSend size={12} />
                         {status === 'loading' ? 'Thinking…' : 'Send'}
                       </button>
                     </div>

@@ -88,7 +88,7 @@ export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceS
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex relative  flex-wrap items-center gap-3">
       <button
         type="button"
         onClick={(event) => {
@@ -100,19 +100,20 @@ export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceS
             startRecording()
           }
         }}
-        className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+        className={`rounded-full px-3 py-1.5 text-xs md:font-semibold transition ${
           recording
-            ? 'bg-rose-500 text-white hover:bg-rose-400'
-            : 'bg-white/10 text-white hover:bg-white/20'
+            ? ' text-white hover:bg-rose-400'
+            : ' text-white hover:bg-white/20'
         }`}
       >
         {recording ? '⏹ Stop' : '🎙 Voice'}
       </button>
-
-      {status === 'recording' && <span className="text-sm text-rose-300">● Recording…</span>}
-      {status === 'transcribing' && <span className="text-sm text-amber-300">⏳ Transcribing…</span>}
-      {status === 'done' && <span className="text-sm text-emerald-300">✓ Done</span>}
-      {status === 'error' && <span className="text-sm text-rose-300">✗ {errorMsg}</span>}
+   <p className='absolute xl:static bottom-9 max-w-40'>
+      {status === 'recording' && <span className="text-[10px] md:text-sm text-rose-300">● Recording…</span>}
+      {status === 'transcribing' && <span className="text-[10px] md:text-sm text-amber-300">⏳ Transcribing…</span>}
+      {status === 'done' && <span className="text-[10px] md:text-sm text-emerald-300">✓ Done</span>}
+      {status === 'error' && <span className="text-[10px] md:text-sm text-rose-300">✗ {errorMsg}</span>}
+      </p>
     </div>
   )
 }
