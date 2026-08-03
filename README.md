@@ -7,7 +7,7 @@
 
 <div align="center">
   
-![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-OCR_·_LLM_-E8A33D?style=flat-square)
+![Sarvam AI](https://img.shields.io/badge/Sarvam_AI-OCR_·_STT_·_LLM_·_TTS-E8A33D?style=flat-square)
 ![Flask](https://img.shields.io/badge/Flask-000000?style=flat-square&logo=flask&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB)
@@ -20,8 +20,7 @@
 </div>
 
 
-
-An AI research assistant that lets students, scholars, and researchers upload academic papers and understand them in their own Indic language. It retrieves grounded answers straight from the uploaded document, no hallucinated content and surfaces key metrics and findings alongside each response. Available in Hindi, Tamil, Telugu, and 8+ other Indian languages - powered by **Sarvam 105B** flagship model.
+An AI research assistant that lets students, scholars, and researchers upload academic papers and understand them in their own Indic language. It retrieves grounded answers straight from the uploaded document, no hallucinated content and surfaces key metrics and findings alongside each response. Speak your questions and hear responses aloud with **Saaras:v3** and **Bulbul:v3**. Available in Hindi, Tamil, Telugu, and 8+ other Indian languages - powered by **Sarvam-105B** flagship model.
 
 ---
 
@@ -29,6 +28,7 @@ An AI research assistant that lets students, scholars, and researchers upload ac
 
 - Explore findings in your native language.
 - OCR (**Sarvam Vision** model) that reliably parses data even from blurred or low-quality scans 💪🏻.
+- Speak your question, hear the answer back to voice input with **Saaras:v3** and native-language voice responses with **Bulbul:v3**.
 - Do deep, focused research on any topic.
 - Upload once, explore for a lifetime — manage your docs and findings anytime.
 
@@ -60,8 +60,10 @@ indic_research_assistant_fronotend
 indic_research_assistant_backend/
 ├── flask_service/
 │   ├── pipeline/
-│   │   ├── ingestion.py       # chunk → embed → upsert (pure, no I/O concerns)
-│   │   ├── retrieval.py       # embed query → search → answer → translate
+│   │   ├── ingestion.py        # chunk → embed → upsert (pure, no I/O concerns)
+│   │   ├── retrieval.py        # embed query → search → answer → translate
+│   │   ├── stt_service.py      # query audio → query text → answer
+│   │   ├── tts_service.py      # answer → translate → speech 
 │   │   └── document_service.py # upload validation + Sarvam OCR job
 │   ├── utils/
 │   │   ├── config.py          # env vars, Pinecone/Sarvam clients
