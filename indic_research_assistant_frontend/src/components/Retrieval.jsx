@@ -199,7 +199,7 @@ function Retrieval() {
       `}</style>
       <Header variant="back" />
 
-      <div className="px-4 py-8 md:px-6 lg:px-8">
+      <div className="px-4 py-4 md:py-8 md:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl  ">
           {/* <div className="mb-6 rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl md:p-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -227,11 +227,7 @@ function Retrieval() {
 
           <div className="grid md:gap-6  lg:grid-cols-[320px_minmax(0,1fr)]">
             <div className="lg:hidden">
-              <div className="mb-4 flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 shadow-[0_10px_35px_rgba(0,0,0,0.2)] backdrop-blur-xl">
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-amber-400">Context</p>
-                  <p className="text-sm text-white">Open the document workspace</p>
-                </div>
+              <div className="mb-4 flex items-center gap-4 rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 shadow-[0_10px_35px_rgba(0,0,0,0.2)] backdrop-blur-xl">
                 <button
                   type="button"
                   onClick={() => setSidebarOpen((prev) => !prev)}
@@ -239,6 +235,11 @@ function Retrieval() {
                 >
                   {sidebarOpen ? <FiX size={16} /> : <FiMenu size={16} />}
                 </button>
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-amber-400">Context</p>
+                  <p className="text-sm text-white">Open the document workspace</p>
+                </div>
+                
               </div>
             </div>
 
@@ -281,7 +282,7 @@ function Retrieval() {
               </div>
 
               <div className="mb-">
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] uppercase md:tracking-[0.3em] text-slate-400">
                   Select document
                 </label>
 
@@ -336,7 +337,7 @@ function Retrieval() {
               </div>
 
               <div className="mb-">
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] md:tracking-[0.3em] text-slate-400">
                   Select target language
                 </label>
                 <div className="flex flex-wrap gap-2">
