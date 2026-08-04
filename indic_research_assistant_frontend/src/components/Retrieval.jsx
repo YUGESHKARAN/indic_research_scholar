@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import axios from 'axios'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { FiCheck, FiCopy, FiMenu, FiSend, FiX } from 'react-icons/fi'
+import { PageTransition } from './PageTransition'
 import { FontImports, Header } from './Shell'
 // Assumption: matches the shared Node axios client set up earlier.
 // Adjust this import path if your project uses a different location.
@@ -24,6 +26,50 @@ const LANGUAGES = [
   { code: 'pa-IN', label: 'Punjabi' },
   { code: 'od-IN', label: 'Odia' },
 ]
+
+
+
+const speakers = [
+  "Shubh", // default
+  "Aditya",
+  "Ritu",
+  "Priya",
+  "Neha",
+  "Rahul",
+  "Pooja",
+  "Rohan",
+  "Simran",
+  "Kavya",
+  "Amit",
+  "Dev",
+  "Ishita",
+  "Shreya",
+  "Ratan",
+  "Varun",
+  "Manan",
+  "Sumit",
+  "Roopa",
+  "Kabir",
+  "Aayan",
+  "Ashutosh",
+  "Advait",
+  "Anand",
+  "Tanya",
+  "Tarun",
+  "Sunny",
+  "Mani",
+  "Gokul",
+  "Vijay",
+  "Shruti",
+  "Suhani",
+  "Mohit",
+  "Kavitha",
+  "Rehan",
+  "Soham",
+  "Rupali",
+];
+
+const defaultSpeaker = speakers[0]; // "Shubh"
 
 function Retrieval() {
   const navigate = useNavigate()
@@ -199,8 +245,8 @@ function Retrieval() {
       `}</style>
       <Header variant="back" />
 
-      <div className="px-4 py-4 md:py-8 md:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl  ">
+      <PageTransition className="px-4 py-4 md:py-8 md:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
           {/* <div className="mb-6 rounded-[28px] border border-white/10 bg-white/10 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur-xl md:p-7">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
@@ -385,7 +431,12 @@ function Retrieval() {
              
             </aside>
 
-            <main className="overflow-hidden md:h-[600px] rounded-md flex flex-col justify-between  border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl">
+            <motion.main
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06, duration: 0.22 }}
+              className="overflow-hidden md:h-[600px] rounded-md flex flex-col justify-between  border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+            >
               <div className="flex flex-wrap items-center justify-between border-b border-white/10 px-3 md:px-5 py-4">
                 <div>
                   <p className="md:text-[11px] text-[9px] uppercase tracking-[0.35em] text-amber-400">Conversation agent</p>
@@ -409,8 +460,16 @@ function Retrieval() {
                   </div>
                 )}
 
+                <AnimatePresence initial={false}>
                 {conversation.map((entry) => (
-                  <div key={entry.id} className={`mb-3 flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <motion.div
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.18 }}
+                    className={`mb-3 flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div className={`max-w-[92%] rounded-[22px] border px-3 md:px-4 py-2 md:py-3 shadow-sm sm:max-w-[80%] ${
                       entry.role === 'user'
                         ? 'border-amber-400/20 bg-amber-400/10 text-white'
@@ -443,8 +502,9 @@ function Retrieval() {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
+                </AnimatePresence>
 
                 {status === 'loading' && (
                   <div className="flex justify-start">
@@ -465,7 +525,13 @@ function Retrieval() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit} className="bg-slate-950/70 px-2 md:px-4 py-4 sm:px-5">
+              <motion.form
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08, duration: 0.2 }}
+                onSubmit={handleSubmit}
+                className="bg-slate-950/70 px-2 md:px-4 py-4 sm:px-5"
+              >
                 <div className="rounded-[24px] border border-white/10  bg-slate-950/70 p-3 md:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                   <label className="mb-2 block px-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
                     Ask a question
@@ -495,7 +561,7 @@ function Retrieval() {
                         onResult={handleVoiceResult}
                         onVoiceStart={() => setQuery('')}
                       />
-                      {result?.content && (
+                      {/* {result?.content && (
                         <button
                           type="button"
                           onClick={handleCopy}
@@ -503,23 +569,25 @@ function Retrieval() {
                         >
                           {copied ? '✓ Copied' : 'Copy'}
                         </button>
-                      )}
-                      <button
+                      )} */}
+                      <motion.button
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={status === 'loading'}
                         className="flex items-center gap-2 rounded-full bg-amber-400  px-3 py-1.5 text-xs md:font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <FiSend size={12} />
                         {status === 'loading' ? 'Thinking…' : 'Send'}
-                      </button>
+                      </motion.button>
                     </div>
                   </div>
                 </div>
-              </form>
-            </main>
+              </motion.form>
+            </motion.main>
           </div>
         </div>
-      </div>
+      </PageTransition>
     </div>
   )
 }

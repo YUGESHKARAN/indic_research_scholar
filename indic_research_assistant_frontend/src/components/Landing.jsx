@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { FontImports, Header } from './Shell'
+import { PageTransition } from './PageTransition'
 
 const SCRIPT_PARADE = [
   { word: 'अनुसंधान', lang: 'Hindi', font: "'Noto Sans Devanagari', sans-serif" },
@@ -53,8 +54,9 @@ function Landing() {
 
       <Header />
 
-      {/* Hero */}
-      <section className="max-w-6xl overflow-x-hidden  mx-auto px-6 pt-10 md:pt-20 pb-12 md:pb-24">
+      <PageTransition className="w-full">
+        {/* Hero */}
+        <section className="max-w-6xl overflow-x-hidden  mx-auto px-6 pt-10 md:pt-20 pb-12 md:pb-24">
         <p className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-6">
           For students, scholars &amp; researchers
         </p>
@@ -107,8 +109,8 @@ function Landing() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section className="border-t overflow-x-hidden border-[#2A2A3D] bg-[#0D0D16]">
+        {/* How it works */}
+        <section className="border-t overflow-x-hidden border-[#2A2A3D] bg-[#0D0D16]">
         <div className="max-w-6xl mx-auto px-6 py-10 md:py-20">
           <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-3">
             How it works
@@ -142,8 +144,8 @@ function Landing() {
         </div>
       </section>
 
-      {/* Features */}
-      <section className="max-w-6xl overflow-x-hidden mx-auto px-6 pb-10 pt-5 md:py-20">
+        {/* Features */}
+        <section className="max-w-6xl overflow-x-hidden mx-auto px-6 pb-10 pt-5 md:py-20">
         <div className="grid md:grid-cols-3 gap-6">
           {FEATURES.map((f) => (
             <div key={f.title} className="border-t border-[#2A2A3D] pt-6">
@@ -154,8 +156,8 @@ function Landing() {
         </div>
       </section>
 
-      {/* Footer CTA */}
-      <section className="border-t overflow-x-hidden border-[#2A2A3D]">
+        {/* Footer CTA */}
+        <section className="border-t overflow-x-hidden border-[#2A2A3D]">
         <div className="max-w-6xl mx-auto px-6  pb-10 pt-8 md:py-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
             <h2 className="font-display text-xl md:text-2xl font-semibold mb-1">Start with a paper.</h2>
@@ -169,7 +171,8 @@ function Landing() {
             Upload your first document
           </Link>
         </div>
-      </section>
+        </section>
+      </PageTransition>
     </div>
   )
 }

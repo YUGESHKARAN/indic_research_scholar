@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../AuthContext'
 import { BsGithub } from 'react-icons/bs'
 
@@ -80,7 +81,9 @@ export function Header({ variant = 'default' }) {
             <div className="w-24 h-8 rounded-md bg-[#181826] animate-pulse" />
           ) : user ? (
             <div className="relative">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.01 }}
                 onClick={() => setMenuOpen((o) => !o)}
                 className="flex items-center gap-2 px-1 md:px-3 py-0.5 md:py-1.5 rounded-md border border-[#2A2A3D]
                            hover:border-[#E8A33D]/50 hover:bg-[#181826] transition-colors"
@@ -90,27 +93,42 @@ export function Header({ variant = 'default' }) {
                   {user.name?.[0] || '?'}
                 </span>
                 <span className="font-body text-sm hidden md:block text-[#F1EEE4]">{user.name}</span>
-              </button>
+              </motion.button>
 
-              {menuOpen && (
-                <>
-                  {/* click-away catcher */}
-                  <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-48 rounded-md border border-[#2A2A3D]
-                                   bg-[#181826] shadow-xl overflow-hidden z-50">
-                    <div className="px-3 py-2.5 border-b border-[#2A2A3D]">
-                      <p className="text-xs text-[#F1EEE4]/40 truncate font-mono">{user.email}</p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full text-left px-3 py-2.5 text-sm text-[#F1EEE4]/80
-                                 hover:bg-[#10101B] hover:text-[#F1EEE4] transition-colors"
+              <AnimatePresence>
+                {menuOpen && (
+                  <>
+                    {/* click-away catcher */}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-40"
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-48 rounded-md border border-[#2A2A3D]
+                                   bg-[#181826] shadow-xl overflow-hidden z-50"
                     >
-                      Log out
-                    </button>
-                  </div>
-                </>
-              )}
+                      <div className="px-3 py-2.5 border-b border-[#2A2A3D]">
+                        <p className="text-xs text-[#F1EEE4]/40 truncate font-mono">{user.email}</p>
+                      </div>
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleLogout}
+                        className="w-full text-left px-3 py-2.5 text-sm text-[#F1EEE4]/80
+                                   hover:bg-[#10101B] hover:text-[#F1EEE4] transition-colors"
+                      >
+                        Log out
+                      </motion.button>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
           ) : (
             <div className="flex items-center gap-2">
