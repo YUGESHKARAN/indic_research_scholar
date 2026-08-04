@@ -481,23 +481,23 @@ function Retrieval() {
                     transition={{ duration: 0.18 }}
                     className={`mb-3 flex ${entry.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[92%] rounded-[22px] border px-3 md:px-4 py-2 md:py-3 shadow-sm sm:max-w-[80%] ${
+                    <div className={`max-w-[92%] rounded-[22px] border px-3 md:px-4 py-1 md:py-2 shadow-sm sm:max-w-[80%] ${
                       entry.role === 'user'
                         ? 'border-amber-400/20 bg-amber-400/10 text-white'
                         : entry.isError
                           ? 'border-rose-400/20 bg-rose-500/10 text-rose-100'
                           : 'border-white/10 bg-slate-900/90 text-slate-100'
                     }`}>
-                      <div className="md:mb-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
+                      <div className="md:mb-2 text-[10px] uppercase tracking-[0.1em] text-slate-400">
                         {entry.role === 'user' ? 'You' : 'Assistant'}
                       </div>
-                      <p className="whitespace-pre-wrap text-xs md:text-sm leading-7">{entry.content}</p>
+                      <p className="whitespace-pre-wrap text-xs md:text-sm leading-[2rem]">{entry.content}</p>
                       {entry.role === 'assistant' && (
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                           {entry.keyWords?.length > 0 && (
                             <div className="flex flex-wrap gap-2">
                               {entry.keyWords.map((keyword, index) => (
-                                <span key={`${keyword}-${index}`} className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[11px] text-amber-300">
+                                <span key={`${keyword}-${index}`} className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[10px] text-amber-300">
                                   {keyword}
                                 </span>
                               ))}
