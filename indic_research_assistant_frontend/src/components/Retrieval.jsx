@@ -9,6 +9,7 @@ import { FontImports, Header } from './Shell'
 // Adjust this import path if your project uses a different location.
 import api from '../instances/axiosInstance'
 import VoiceInput from './VoiceInput'
+import SpeakerSelect from './SpeakerSelect'
 
 // const FLASK_BASE_URL = 'http://127.0.0.1:5000'
 const FLASK_BASE_URL = 'https://indic-research-scholar.onrender.com'
@@ -30,43 +31,43 @@ const LANGUAGES = [
 
 
 const speakers = [
-  "Shubh", // default
-  "Aditya",
-  "Ritu",
-  "Priya",
-  "Neha",
-  "Rahul",
-  "Pooja",
-  "Rohan",
-  "Simran",
-  "Kavya",
-  "Amit",
-  "Dev",
-  "Ishita",
-  "Shreya",
-  "Ratan",
-  "Varun",
-  "Manan",
-  "Sumit",
-  "Roopa",
-  "Kabir",
-  "Aayan",
-  "Ashutosh",
-  "Advait",
-  "Anand",
-  "Tanya",
-  "Tarun",
-  "Sunny",
-  "Mani",
-  "Gokul",
-  "Vijay",
-  "Shruti",
-  "Suhani",
-  "Mohit",
-  "Kavitha",
-  "Rehan",
-  "Soham",
-  "Rupali",
+  "shubh", // default
+  "aditya",
+  "ritu",
+  "priya",
+  "neha",
+  "rahul",
+  "pooja",
+  "rohan",
+  "simran",
+  "kavya",
+  "amit",
+  "dev",
+  "ishita",
+  "shreya",
+  "ratan",
+  "varun",
+  "manan",
+  "sumit",
+  "roopa",
+  "kabir",
+  "aayan",
+  "ashutosh",
+  "advait",
+  "anand",
+  "tanya",
+  "tarun",
+  "sunny",
+  "mani",
+  "gokul",
+  "vijay",
+  "shruti",
+  "suhani",
+  "mohit",
+  "kavitha",
+  "rehan",
+  "soham",
+  "rupali",
 ];
 
 const defaultSpeaker = speakers[0]; // "Shubh"
@@ -88,6 +89,7 @@ function Retrieval() {
   const [conversation, setConversation] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [voiceEnabled, setVoiceEnabled] = useState(false)
+  const [selectedSpeaker, setSelectedSpeaker] = useState(defaultSpeaker)
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -176,6 +178,7 @@ function Retrieval() {
         doc_id: selectedDoc.doc_id,
         query: trimmedQuery,
         target_lang: targetLang,
+        speaker:selectedSpeaker,
       })
 
       setStatus('success')
@@ -235,6 +238,8 @@ function Retrieval() {
       handleSubmit(e)
     }
   }
+
+  console.log("selectedSpeaker", selectedSpeaker)
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(248,190,80,0.16),_transparent_28%),linear-gradient(135deg,_#060816_0%,_#12172a_45%,_#0b1020_100%)] text-slate-100 font-body">
@@ -301,12 +306,12 @@ function Retrieval() {
             </div>
 
             <aside className={`fixed left-0 top-0 z-50 h-full space-y-12 md:space-y-0 md:flex flex-col justify-between w-[88vw] max-w-[320px] rounded-r-[28px] lg:rounded-md border-r border-white/10 bg-slate-950/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl transition-transform duration-300 ease-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:sticky lg:top-24 lg:h-auto lg:w-full lg:translate-x-0  lg:border lg:bg-slate-950/70 lg:shadow-[0_20px_70px_rgba(0,0,0,0.25)]`}>
-              <div className="mb-2 md:mt-0  mt-5 flex items-start justify-between">
+              <div className=" md:mt-0  mt-5 flex items-start justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-400">
                     Workspace controls
                   </p>
-                  <h2 className="md:mt-2 mt-1 text-lg md:text-xl font-semibold text-white">Set the context</h2>
+                  <h2 className="md:mt-2 mt-1 text-lg md:text-xl font-semibold md:hidden text-white">Set the context</h2>
                 </div>
                 <button
                   type="button"
@@ -317,18 +322,33 @@ function Retrieval() {
                 </button>
               </div>
 
-               <div className="mb- rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3">
-                
-                
-                <ul className=" space-y-1.5 text-xs text-slate-300">
-                  <li>• Conversational thread with contextual memory</li>
-                  <li>• Voice and text working side by side</li>
-                  {/* <li>• Clean, enterprise-grade visual hierarchy</li> */}
-                </ul>
+              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    {/* <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Voice output</p> */}
+                    <p className="mt-1 text-xs text-slate-300">Enable audio playback for assistant replies</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setVoiceEnabled((prev) => !prev)}
+                    className={`relative h-6 w-11 rounded-full transition ${voiceEnabled ? 'bg-amber-400' : 'bg-white/15'}`}
+                  >
+                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${voiceEnabled ? 'left-4' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div className="mt-2 ">
+            
+                  <SpeakerSelect
+                    speakers={speakers}
+                    selectedSpeaker={selectedSpeaker}
+                    setSelectedSpeaker={setSelectedSpeaker}
+                  />
+                </div>
               </div>
 
               <div className="mb-">
-                <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] uppercase md:tracking-[0.3em] text-slate-400">
+                <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] uppercase md:tracking-[0.2em] text-slate-400">
                   Select document
                 </label>
 
@@ -383,7 +403,7 @@ function Retrieval() {
               </div>
 
               <div className="mb-">
-                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] md:tracking-[0.3em] text-slate-400">
+                <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.1em] md:tracking-[0.2em] text-slate-400">
                   Select target language
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -407,25 +427,16 @@ function Retrieval() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-slate-400">Voice output</p>
-                    <p className="mt-1 text-sm text-slate-300">Enable audio playback for assistant replies</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setVoiceEnabled((prev) => !prev)}
-                    className={`relative h-6 w-11 rounded-full transition ${voiceEnabled ? 'bg-amber-400' : 'bg-white/15'}`}
-                  >
-                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${voiceEnabled ? 'left-3' : 'left-1'}`} />
-                  </button>
-                </div>
-                {/* <ul className="mt-3 space-y-2 text-sm text-slate-300">
+              
+
+               <div className=" rounded-2xl border border-white/10 bg-gradient-to-br from-white/10 to-white/5 p-3">
+                
+                
+                <ul className=" space-y-1.5 text-xs text-slate-300">
                   <li>• Conversational thread with contextual memory</li>
-                  <li>• Voice and text working side by side</li>
-                  <li>• Clean, enterprise-grade visual hierarchy</li>
-                </ul> */}
+                  <li className='md:hidden'>• Voice and text working side by side</li>
+                  <li className='md:hidden'>• Clean, enterprise-grade visual hierarchy</li>
+                </ul>
               </div>
 
              
@@ -447,7 +458,7 @@ function Retrieval() {
                 </div>
               </div>
 
-              <div className="h-[400px] xl:h-[300px] overflow-x-hidden overflow-y-auto scrollbar-hide px-4 py-4 sm:px-5">
+              <div className="h-[350px] xl:h-[300px] overflow-x-hidden overflow-y-auto scrollbar-hide px-4 py-4 sm:px-5">
                 {conversation.length === 0 && status === 'idle' && (
                   <div className="flex h-full h-[250px] flex-col items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-gradient-to-br from-white/5 to-transparent px-6 py-10 text-center">
                     <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/12 text-3xl text-amber-400">
@@ -558,6 +569,7 @@ function Retrieval() {
                       <VoiceInput
                         selectedDoc={selectedDoc}
                         targetLang={targetLang}
+                        selectedSpeaker={selectedSpeaker}
                         onResult={handleVoiceResult}
                         onVoiceStart={() => setQuery('')}
                       />

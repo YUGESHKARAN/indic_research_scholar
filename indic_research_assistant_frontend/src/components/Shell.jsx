@@ -28,7 +28,7 @@ export function Header({ variant = 'default' }) {
 
   return (
     <header className="border-b border-[#2A2A3D] bg-[#10101B]/90 backdrop-blur sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 md:px-0 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3 group">
           <span className="md:w-8 md:h-8 w-6 h-6 rounded-md bg-[#E8A33D] text-[#10101B] font-display font-semibold
                            flex items-center justify-center text-sm md:text-lg">
