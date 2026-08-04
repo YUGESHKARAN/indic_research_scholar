@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { FontImports, Header } from '../components/Shell'
 import { useAuth } from '../AuthContext'
+import { PageTransition } from '../components/PageTransition'
 
 function Register() {
   const { register } = useAuth()
@@ -40,7 +42,7 @@ function Register() {
       <FontImports />
       <Header variant="back" />
 
-      <div className="flex items-center mt-12 justify-center px-6 py-16">
+      <PageTransition className="flex items-center mt-12 justify-center px-6 py-16">
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-2">
@@ -52,7 +54,13 @@ function Register() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <motion.form
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04, duration: 0.2 }}
+            onSubmit={handleSubmit}
+            className="space-y-6"
+          >
             <div>
               <label htmlFor="name" className="block text-sm text-[#F1EEE4]/70 mb-1">
                 Name
@@ -104,7 +112,9 @@ function Register() {
               />
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               type="submit"
               disabled={status === 'loading'}
               className="w-full rounded-md bg-[#E8A33D] text-[#10101B] py-2.5 text-sm
@@ -112,8 +122,8 @@ function Register() {
                          disabled:cursor-not-allowed"
             >
               {status === 'loading' ? 'Creating account…' : 'Create account'}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
 
           {status === 'error' && (
             <div className="mt-4 rounded-md border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">
@@ -128,7 +138,7 @@ function Register() {
             </Link>
           </p>
         </div>
-      </div>
+      </PageTransition>
     </div>
   )
 }

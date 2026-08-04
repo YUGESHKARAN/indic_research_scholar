@@ -47,6 +47,7 @@ def transcribe():
 
     audio_file = request.files["audio"]
     language = request.form.get("language", "unknown")
+    speaker = request.form.get("speaker", "shubh")
     doc_id = request.form.get("doc_id", "")
 
     # ✅ Validate doc_id early
@@ -86,7 +87,7 @@ def transcribe():
         result = get_answer(doc_id, transcript, target_language)
 
         # ✅ Step 5: TTS
-        audio_b64 = get_audio(result["content"], language_code=target_language)
+        audio_b64 = get_audio(result["content"], language_code=target_language, speaker=speaker)
         result["audio"] = audio_b64 or None
         result["transcript"] = transcript          # ✅ return transcript so UI can show it
         result["detected_language"] = detected_language
@@ -107,15 +108,17 @@ def ask():
     data = request.get_json()
     doc_id = data.get("doc_id")
     query = data.get("query")
+    speaker = data.get("speaker", "shubh")
     target_language = data.get("target_lang", "en-IN")
     print("target_language", target_language)
+    print("speaker", speaker)
 
     if not doc_id or not query:
         return jsonify({"error": "doc_id and query are required"}), 400
 
     try:
         result = get_answer(doc_id, query, target_language)
-        audio_b64 = get_audio(result['content'], language_code=target_language)  # ✅ pass language
+        audio_b64 = get_audio(result['content'], language_code=target_language, speaker=speaker)  # ✅ pass language
 
         if audio_b64:
             result['audio'] = audio_b64  # ✅ base64 string, JSON-safe

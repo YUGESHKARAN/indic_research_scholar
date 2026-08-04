@@ -160,9 +160,11 @@
 
 import React, { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { FontImports, Header } from '../components/Shell'
 import { useAuth } from '../AuthContext'
 import ForgotPassword from '../components/ForgotPassword'
+import { PageTransition } from '../components/PageTransition'
 
 const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http:/localhost:3000'
 // const NODE_BASE_URL = 'http://localhost:3000'
@@ -223,7 +225,7 @@ function Login() {
       <FontImports />
       <Header variant="back" />
 
-      <div className="flex items-center justify-center px-4 py-16">
+      <PageTransition className="flex items-center justify-center px-4 py-16">
         <div className="w-full max-w-sm">
           <div className="mb-8">
             <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-2">
@@ -241,7 +243,9 @@ function Login() {
             </div>
           )}
 
-          <button
+          <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
             type="button"
             onClick={handleGitHubLogin}
             className="w-full flex items-center justify-center gap-2.5 rounded-md border border-[#2A2A3D]
@@ -250,7 +254,7 @@ function Login() {
           >
             <GitHubIcon />
             Continue with GitHub
-          </button> 
+          </motion.button> 
 
           <div className="flex items-center gap-3 mb-5">
             <div className="h-px flex-1 bg-[#2A2A3D]" />
@@ -258,7 +262,13 @@ function Login() {
             <div className="h-px flex-1 bg-[#2A2A3D]" />
           </div> 
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <motion.form
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.04, duration: 0.2 }}
+            onSubmit={handleSubmit}
+            className="space-y-4"
+          >
             <div>
               <label htmlFor="email" className="block text-sm text-[#F1EEE4]/70 mb-1">
                 Email
@@ -302,7 +312,9 @@ function Login() {
               />
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
               type="submit"
               disabled={status === 'loading'}
               className="w-full rounded-md bg-[#E8A33D] text-[#10101B] py-2.5 text-sm
@@ -310,8 +322,8 @@ function Login() {
                          disabled:cursor-not-allowed"
             >
               {status === 'loading' ? 'Logging in…' : 'Log in'}
-            </button>
-          </form>
+            </motion.button>
+          </motion.form>
 
           {status === 'error' && (
             <div className="mt-4 rounded-md border border-red-900 bg-red-950/40 p-3 text-sm text-red-300">
@@ -326,7 +338,7 @@ function Login() {
             </Link>
           </p>
         </div>
-      </div>
+      </PageTransition>
 
       {forgotOpen && <ForgotPassword onClose={() => setForgotOpen(false)} />}
     </div>

@@ -10,7 +10,7 @@ function playBase64Audio(b64) {
   new Audio(url).play()
 }
 
-export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceStart }) {
+export default function VoiceInput({ selectedDoc, targetLang, selectedSpeaker, onResult, onVoiceStart }) {
   const [recording, setRecording] = useState(false)
   const [status, setStatus] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
@@ -72,6 +72,7 @@ export default function VoiceInput({ selectedDoc, targetLang, onResult, onVoiceS
       formData.append('audio', blob, 'recording.webm')
       formData.append('doc_id', selectedDoc.doc_id)
       formData.append('language', targetLang || 'unknown')
+      formData.append('speaker', selectedSpeaker || 'Shubh')
 
       const res = await axios.post(`${FLASK_BASE_URL}/transcribe`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
