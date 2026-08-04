@@ -167,9 +167,11 @@
 // export default Ingest
 import React, { useState } from "react";
 import axios from "axios";
+import { motion } from 'framer-motion'
 import { FontImports, Header } from "./Shell";
 import { useAuth } from "../AuthContext";
 import { useNavigate } from "react-router-dom";
+import { PageTransition } from './PageTransition'
 
 // const FLASK_BASE_URL = 'http://127.0.0.1:5000'
 const FLASK_BASE_URL = "https://indic-research-scholar.onrender.com";
@@ -269,7 +271,7 @@ function Ingest() {
       `}</style>
       <Header variant="back" />
 
-      <div className="px-6 py-16">
+      <PageTransition className="px-6 py-16">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <p className="font-mono text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-2">
@@ -286,7 +288,10 @@ function Ingest() {
           <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-8 items-start">
             {/* LEFT: form */}
             <div className="lg:sticky lg:top-24">
-              <form
+              <motion.form
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.06, duration: 0.2 }}
                 onSubmit={handleSubmit}
                 className="space-y-6 md:space-y-8 rounded-2xl border border-[#2A2A3D] bg-[#181826] p-6"
               >
@@ -340,7 +345,9 @@ function Ingest() {
                   />
                 </div>
 
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
                   type="submit"
                   disabled={status === "loading"}
                   className="w-full rounded-md bg-[#E8A33D] text-[#10101B] py-2.5 text-sm
@@ -350,8 +357,8 @@ function Ingest() {
                   {status === "loading"
                     ? "Processing document…"
                     : "Ingest document"}
-                </button>
-              </form>
+                </motion.button>
+              </motion.form>
 
               {status === "loading" && (
                 <p className="text-xs text-[#F1EEE4]/40 animate-pulse mt-3">
@@ -459,7 +466,7 @@ function Ingest() {
             </div>
           </div>
         </div>
-      </div>
+      </PageTransition>
     </div>
   );
 }

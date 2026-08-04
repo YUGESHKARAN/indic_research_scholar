@@ -6,13 +6,15 @@ import base64
 SARVAM_API_KEY = os.getenv('SARVAM_API_KEY')
 client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
 
-def get_audio(text, language_code="hi-IN"):
+def get_audio(text, language_code="hi-IN", speaker = "shubh"):
     try:
+        print("tts speaker", speaker)
         chunks = []  # ✅ reset per call — moved inside the function
         for chunk in client.text_to_speech.convert_stream(
             text=text,
             target_language_code=language_code,  # ✅ use dynamic language
-            speaker="shubh",
+            # speaker="shubh",
+            speaker=speaker,
             model="bulbul:v3",
             output_audio_codec="mp3",
         ):
