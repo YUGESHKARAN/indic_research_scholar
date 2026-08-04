@@ -12,7 +12,7 @@ def get_audio(text, language_code="hi-IN", speaker = "shubh"):
         chunks = []  # ✅ reset per call — moved inside the function
         for chunk in client.text_to_speech.convert_stream(
             text=text,
-            target_language_code=language_code,  # ✅ use dynamic language
+            language_code=language_code,  # ✅ use dynamic language
             # speaker="shubh",
             speaker=speaker,
             model="bulbul:v3",
