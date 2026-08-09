@@ -595,7 +595,7 @@ function Retrieval() {
                         <div className="md:mb-2 text-[10px] uppercase tracking-[0.1em] text-slate-400">
                           {entry.role === "user" ? "You" : "Assistant"}
                         </div>
-                        <p className="md:text-[14px] text-xs leading-[2rem]">
+                        <p className="md:text-[14px] text-xs text-wrap break-all leading-[2rem]">
                           {entry.content}
                         </p>
                         {entry.role === "assistant" && (
