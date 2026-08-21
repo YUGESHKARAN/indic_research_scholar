@@ -88,6 +88,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         logout,
+        saveUser,
       }}
     >
       {children}

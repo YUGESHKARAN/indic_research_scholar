@@ -24,6 +24,7 @@
     "otp-generator": "^4.0.1",
     "passport": "^0.7.0",
     "passport-github2": "^0.1.12",
+    "redis": "^6.2.1",
     "serverless-http": "^4.0.0"
   },
   "devDependencies": {

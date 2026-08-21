@@ -3,10 +3,11 @@ const router = express.Router();
 require("dotenv").config();
 const passport = require('../config/passport');
 const authenticate = require('../middleware/authMiddleware');
-const { register, login, logout, sendOTP, resetPassword, me, githubCallback } = require('../controllers/scholar.Controller');
+const { register, login, logout, sendOTP, resetPassword, me, githubCallback, sendRegistrationOTP } = require('../controllers/scholar.Controller');
 
 const { signToken, cookieOptions , COOKIE_NAME} = require("../config/jwt");
 
+router.post('/verify-otp',sendRegistrationOTP)
 router.post('/register', register);
 router.post('/login', login);
 router.post("/send-otp",sendOTP);
