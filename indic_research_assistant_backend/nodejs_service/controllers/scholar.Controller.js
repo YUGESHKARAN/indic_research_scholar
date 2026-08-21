@@ -1,9 +1,11 @@
 const Scholar = require("../models/scholarSchema");
-const { signToken, cookieOptions , COOKIE_NAME} = require("../config/jwt");
+const { signToken, cookieOptions, COOKIE_NAME } = require("../config/jwt");
 require("dotenv").config();
 
 const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
+const { saveOTP, verifyOTP } = require("../utils/otpStore");
+const { sendOTPEmail } = require("../utils/emailStore");
 
 // Send OTP via email
 const transporter = nodemailer.createTransport({
@@ -14,22 +16,62 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const register = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-    console.log("register api called", req.body);
+const sendRegistrationOTP = async (req, res) => {
+  const { name, email, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res
-        .status(400)
-        .json({ error: "name, email, and password are required" });
-    }
+  if (!name || !email || !password) {
+    return res
+      .status(400)
+      .json({ message: "Scholar name, email and passowrd required !" });
+  }
+
     if (password.length < 8) {
       return res
         .status(400)
         .json({ error: "Password must be at least 8 characters" });
     }
 
+  try {
+    const user = await Scholar.findOne({ email: { $eq: email } });
+
+    if (user) {
+      return res.status(400).json({ message: "Scholar already exists" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit OTP
+    await saveOTP(email, otp);
+    await sendOTPEmail(email, otp);
+
+    res.status(200).json({ message: "OTP sent to your university email" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to send OTP", error: err.message });
+    console.log("registration error", err.message);
+  }
+};
+
+const register = async (req, res) => {
+  const { name, email, password, otp } = req.body;
+    // console.log("register api called", req.body);
+
+    if (!name || !email || !password || !otp) {
+      return res
+        .status(400)
+        .json({ error: "name, email, password and OTP required" });
+    }
+
+  const { valid, reason } = await verifyOTP(email, otp);
+  if (!valid) {
+    return res.status(400).json({ message: reason });
+  }
+
+
+    if (password.length < 8) {
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 8 characters" });
+    }
+  try {
+    
     const existing = await Scholar.findOne({ email: email.toLowerCase() });
     if (existing) {
       return res
@@ -138,7 +180,9 @@ const sendOTP = async (req, res) => {
 const resetPassword = async (req, res) => {
   const { email, newPassword, otp } = req.body;
   try {
-    const user = await Scholar.findOne({ email: { $eq: email } }).select("+otp +otpExpiresAt");;
+    const user = await Scholar.findOne({ email: { $eq: email } }).select(
+      "+otp +otpExpiresAt",
+    );
 
     if (!user) {
       return res.status(404).json({ message: "user not found !" });
@@ -172,7 +216,7 @@ const me = async (req, res) => {
   return res.status(200).json({ user });
 };
 
-module.exports = { register, login, logout, sendOTP, resetPassword, me };
+module.exports = { register, login, logout, sendOTP, resetPassword, me, sendRegistrationOTP };
 
 // Called after Passport's Google strategy succeeds (req.user is set by done(null, user))
 const googleCallback = (req, res) => {
