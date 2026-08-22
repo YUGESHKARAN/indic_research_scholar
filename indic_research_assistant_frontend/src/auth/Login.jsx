@@ -166,7 +166,7 @@ import { useAuth } from '../AuthContext'
 import ForgotPassword from '../components/ForgotPassword'
 import { PageTransition } from '../components/PageTransition'
 
-const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http:/localhost:3000'
+const NODE_BASE_URL = import.meta.env.VITE_NODE_BASE_URL || 'http://localhost:3000'
 // const NODE_BASE_URL = 'http://localhost:3000'
 
 const OAUTH_ERROR_MESSAGES = {
