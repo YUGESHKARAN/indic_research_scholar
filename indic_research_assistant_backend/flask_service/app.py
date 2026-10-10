@@ -93,7 +93,7 @@ def transcribe():
         result["detected_language"] = detected_language
         print("\nresponse: ", jsonify(result))
 
-        return jsonify(result), 200
+        return jsonify(result['content']), 200
 
     except Exception as e:
         print("transcribe error:", str(e))
@@ -126,7 +126,7 @@ def ask():
             result['audio'] = None
 
         
-        print("\nresult",jsonify(result))
+        print("\nresult",jsonify(result['content']))
         return jsonify(result), 200
         
     except Exception as e:
