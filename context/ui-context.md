@@ -6,7 +6,7 @@
 
 Color is intentional and sparse. Typography carries the visual weight. Whitespace is a first-class material.
 
----
+--- 
 
 ## Theme
 
