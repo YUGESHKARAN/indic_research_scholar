@@ -93,14 +93,14 @@ function Landing() {
 
         <div className="flex flex-wrap gap-3 mt-10">
           <Link
-            to="/ingest"
+            to="/workspace"
             className="px-3 md:px-6 py-1.5 text-sm md:text-base md:py-3 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
                        hover:bg-[#f0b158] transition-colors"
           >
-            Ingest a document
+            Open workspace
           </Link>
           <Link
-            to="/ask"
+            to="/workspace/qa"
             className="px-3 md:px-6 py-1.5 text-sm md:text-base md:py-3 rounded-md border border-[#2A2A3D] text-[#F1EEE4]
                        hover:border-[#E8A33D]/50 hover:bg-[#181826] transition-colors"
           >
@@ -132,7 +132,7 @@ function Landing() {
                 <h3 className="font-display text-xl md:text-2xl font-semibold mb-3">{step.title}</h3>
                 <p className="text-[#F1EEE4]/60 leading-relaxed mb-3 md:mb-6 flex-1">{step.body}</p>
                 <Link
-                  to={step.to}
+                  to={step.to === '/ingest' ? '/workspace' : '/workspace/qa'}
                   className="font-body text-xs md:text-sm font-medium text-[#E8A33D] hover:text-[#f0b158]
                              inline-flex items-center gap-1 transition-colors"
                 >
@@ -164,11 +164,11 @@ function Landing() {
             <p className="text-[#F1EEE4]/50 text-sm">PDF, PNG, JPEG, or ZIP — up to 10 pages for now.</p>
           </div>
           <Link
-            to="/ingest"
+            to="/workspace"
             className="px-3 md:px-6 py-1.5 text-sm md:text-base md:py-3 rounded-md bg-[#E8A33D] text-[#10101B] font-medium
                        hover:bg-[#f0b158] transition-colors whitespace-nowrap"
           >
-            Upload your first document
+            Open your workspace
           </Link>
         </div>
         </section>

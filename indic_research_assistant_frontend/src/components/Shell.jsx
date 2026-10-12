@@ -43,15 +43,22 @@ export function Header({ variant = 'default' }) {
           {variant === 'default' && user && (
             <nav className="flex items-center gap-0.5 md:gap-2">
               <Link
+                to="/workspace"
+                className="font-body text-xs md:text-sm px-2 py-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                           hover:bg-[#181826] transition-colors"
+              >
+                Workspace
+              </Link>
+              <Link
                 to="/ingest"
-                className="font-body text-xs md:text-sm px-2 ppy-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                className="font-body text-xs md:text-sm px-2 py-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
               >
                 Ingest
               </Link>
               <Link
                 to="/ask"
-                className="font-body text-xs md:text-sm px-2 ppy-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
+                className="font-body text-xs md:text-sm px-2 py-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
               >
                 Ask

@@ -28,7 +28,7 @@ Indic Assistant for personalized learning guide, It is a AI applications which a
 
 ## Features
 
-### Perfroming Q&A with knowledge base
+### Performing Q&A with knowledge base
 
 - User first select the one or more uploaded document, and should enable/disable, then provide the query prompt and recieve the  
   markdown supported response with copy feature.
