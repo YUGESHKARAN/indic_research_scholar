@@ -17,3 +17,29 @@ body{
     /* Hide scrollbar for Firefox */
     scrollbar-width: none; /* Firefox */
   }
+
+  .studio-scrollbar {
+    scrollbar-color: rgba(226, 232, 240, 0.28) transparent;
+    scrollbar-width: thin;
+  }
+
+  .studio-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .studio-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .studio-scrollbar::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: rgba(226, 232, 240, 0.28);
+    background-clip: padding-box;
+  }
+
+  .studio-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(246, 199, 110, 0.55);
+    background-clip: padding-box;
+  }

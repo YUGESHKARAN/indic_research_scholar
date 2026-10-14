@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -71,7 +71,224 @@ const speakers = [
 
 const defaultSpeaker = speakers[0]; // "Shubh"
 
-function Retrieval() {
+function renderInlineMarkdown(text, keyPrefix) {
+  const tokenPattern =
+    /(\[([^\]]+)\]\((https?:\/\/[^)\s]+|mailto:[^)\s]+)\)|\*\*(.+?)\*\*|__(.+?)__|~~(.+?)~~|`([^`]+)`|\*(?!\s)(.+?)\*|_(?!\s)(.+?)_)/g;
+  const nodes = [];
+  let lastIndex = 0;
+  let match;
+  let tokenIndex = 0;
+
+  while ((match = tokenPattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const key = `${keyPrefix}-${tokenIndex++}`;
+    if (match[2]) {
+      nodes.push(
+        <a
+          key={key}
+          href={match[3]}
+          target="_blank"
+          rel="noreferrer"
+          className="text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+        >
+          {match[2]}
+        </a>,
+      );
+    } else if (match[4] || match[5]) {
+      nodes.push(<strong key={key} className="font-semibold text-slate-100">{match[4] || match[5]}</strong>);
+    } else if (match[6]) {
+      nodes.push(<del key={key}>{match[6]}</del>);
+    } else if (match[7]) {
+      nodes.push(
+        <code key={key} className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.9em] text-amber-200">
+          {match[7]}
+        </code>,
+      );
+    } else {
+      nodes.push(<em key={key}>{match[8] || match[9]}</em>);
+    }
+    lastIndex = tokenPattern.lastIndex;
+  }
+
+  if (lastIndex < text.length) nodes.push(text.slice(lastIndex));
+  return nodes;
+}
+
+function MarkdownContent({ content }) {
+  const lines = String(content || "").replace(/\r\n?/g, "\n").split("\n");
+  const blocks = [];
+  let index = 0;
+  let key = 0;
+
+  const isBlockStart = (line) =>
+    /^```/.test(line) ||
+    /^#{1,6}\s/.test(line) ||
+    /^\s*>\s?/.test(line) ||
+    /^\s*[-*+]\s+/.test(line) ||
+    /^\s*\d+[.)]\s+/.test(line) ||
+    /^\s*(\*\s*){3,}$/.test(line) ||
+    (line.includes("|") && index + 1 < lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[index + 1]));
+
+  while (index < lines.length) {
+    const line = lines[index];
+    const blockKey = `markdown-${key++}`;
+
+    if (!line.trim()) {
+      index += 1;
+      continue;
+    }
+
+    if (/^```/.test(line)) {
+      const language = line.slice(3).trim();
+      const codeLines = [];
+      index += 1;
+      while (index < lines.length && !/^```/.test(lines[index])) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index < lines.length) index += 1;
+      blocks.push(
+        <pre key={blockKey} className="my-3 overflow-x-auto rounded-lg border border-white/10 bg-[#080d17] p-3 font-mono text-xs leading-5 text-slate-100">
+          {language && <span className="mb-1.5 block text-[10px] uppercase tracking-wider text-slate-400">{language}</span>}
+          <code>{codeLines.join("\n")}</code>
+        </pre>,
+      );
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.*)$/);
+    if (heading) {
+      const sizeClass = {
+        1: "mt-4 mb-2 text-xl font-semibold",
+        2: "mt-3.5 mb-2 text-lg font-semibold",
+        3: "mt-3 mb-1.5 text-base font-semibold",
+        4: "mt-2.5 mb-1.5 text-sm font-semibold",
+        5: "mt-2 mb-1 text-sm font-semibold",
+        6: "mt-2 mb-1 text-xs font-semibold",
+      }[heading[1].length];
+      const Heading = `h${heading[1].length}`;
+      blocks.push(
+        <Heading key={blockKey} className={`${sizeClass} text-slate-100`}>
+          {renderInlineMarkdown(heading[2], blockKey)}
+        </Heading>,
+      );
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*(\*\s*){3,}$/.test(line)) {
+      blocks.push(<hr key={blockKey} className="my-3 border-white/10" />);
+      index += 1;
+      continue;
+    }
+
+    if (/^\s*>/.test(line)) {
+      const quoteLines = [];
+      while (index < lines.length && /^\s*>/.test(lines[index])) {
+        quoteLines.push(lines[index].replace(/^\s*>\s?/, ""));
+        index += 1;
+      }
+      blocks.push(
+        <blockquote key={blockKey} className="my-3 border-l-2 border-amber-300/50 pl-3 text-slate-200">
+          {quoteLines.map((quoteLine, quoteIndex) => (
+            <p key={`${blockKey}-${quoteIndex}`} className="leading-6">
+              {renderInlineMarkdown(quoteLine, `${blockKey}-quote-${quoteIndex}`)}
+            </p>
+          ))}
+        </blockquote>,
+      );
+      continue;
+    }
+
+    const isUnordered = /^\s*[-*+]\s+/.test(line);
+    const isOrdered = /^\s*\d+[.)]\s+/.test(line);
+    if (isUnordered || isOrdered) {
+      const items = [];
+      const listPattern = isOrdered ? /^\s*\d+[.)]\s+(.*)$/ : /^\s*[-*+]\s+(.*)$/;
+      while (index < lines.length && listPattern.test(lines[index])) {
+        items.push(lines[index].match(listPattern)[1]);
+        index += 1;
+      }
+      const List = isOrdered ? "ol" : "ul";
+      blocks.push(
+        <List
+          key={blockKey}
+          className={`${isOrdered ? "list-decimal" : "list-disc"} my-2 space-y-1 pl-5 marker:text-amber-300`}
+        >
+          {items.map((item, itemIndex) => (
+            <li key={`${blockKey}-${itemIndex}`} className="pl-1 leading-6">
+              {renderInlineMarkdown(item, `${blockKey}-item-${itemIndex}`)}
+            </li>
+          ))}
+        </List>,
+      );
+      continue;
+    }
+
+    const tableHeader = line.includes("|") && index + 1 < lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[index + 1]);
+    if (tableHeader) {
+      const cells = (row) => row.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+      const headers = cells(line);
+      index += 2;
+      const rows = [];
+      while (index < lines.length && lines[index].includes("|") && lines[index].trim()) {
+        rows.push(cells(lines[index]));
+        index += 1;
+      }
+      blocks.push(
+        <div key={blockKey} className="studio-scrollbar my-3 overflow-x-auto rounded-lg border border-white/10">
+          <table className="w-full border-collapse text-left text-xs">
+            <thead className="bg-white/5 text-slate-100">
+              <tr>
+                {headers.map((cell, cellIndex) => (
+                  <th key={`${blockKey}-head-${cellIndex}`} className="border-b border-white/10 px-2.5 py-2 font-semibold">
+                    {renderInlineMarkdown(cell, `${blockKey}-head-cell-${cellIndex}`)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`${blockKey}-row-${rowIndex}`} className="border-b border-white/5 last:border-0">
+                  {headers.map((_, cellIndex) => (
+                    <td key={`${blockKey}-row-${rowIndex}-cell-${cellIndex}`} className="px-2.5 py-2 text-slate-200">
+                      {renderInlineMarkdown(row[cellIndex] || "", `${blockKey}-row-${rowIndex}-cell-${cellIndex}`)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>,
+      );
+      continue;
+    }
+
+    const paragraph = [line.trim()];
+    index += 1;
+    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index])) {
+      paragraph.push(lines[index].trim());
+      index += 1;
+    }
+    blocks.push(
+      <p key={blockKey} className="my-2 whitespace-pre-wrap leading-6 text-slate-200">
+        {paragraph.map((paragraphLine, lineIndex) => (
+          <React.Fragment key={`${blockKey}-line-${lineIndex}`}>
+            {lineIndex > 0 && <br />}
+            {renderInlineMarkdown(paragraphLine, `${blockKey}-line-${lineIndex}`)}
+          </React.Fragment>
+        ))}
+      </p>,
+    );
+  }
+
+  return <div className="text-sm leading-6 md:text-[14px]">{blocks}</div>;
+}
+
+function Retrieval({ embedded = false, onControlsChange }) {
   const navigate = useNavigate();
 
   const [docs, setDocs] = useState([]);
@@ -89,6 +306,22 @@ function Retrieval() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [selectedSpeaker, setSelectedSpeaker] = useState(defaultSpeaker);
+  const conversationViewportRef = useRef(null);
+  const latestQuestionIdRef = useRef(null);
+  const latestQuestionElementRef = useRef(null);
+
+  useEffect(() => {
+    const viewport = conversationViewportRef.current;
+    const question = latestQuestionElementRef.current;
+    if (!viewport || !question || !latestQuestionIdRef.current) return;
+
+    const viewportTop = viewport.getBoundingClientRect().top;
+    const questionTop = question.getBoundingClientRect().top;
+    viewport.scrollTo({
+      top: viewport.scrollTop + questionTop - viewportTop - 12,
+      behavior: "smooth",
+    });
+  }, [conversation]);
 
   useEffect(() => {
     const fetchDocs = async () => {
@@ -112,15 +345,50 @@ function Retrieval() {
     );
   }, [targetLang]);
 
-  const handleSelectDoc = (doc) => {
+  const handleSelectDoc = useCallback((doc) => {
     setSelectedDoc(doc);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!embedded || !onControlsChange) return;
+
+    onControlsChange({
+      docs,
+      docsStatus,
+      selectedDoc,
+      targetLang,
+      setTargetLang,
+      voiceEnabled,
+      setVoiceEnabled,
+      selectedSpeaker,
+      setSelectedSpeaker,
+      handleSelectDoc,
+      languages: LANGUAGES,
+      speakers,
+    });
+  }, [
+    embedded,
+    onControlsChange,
+    docs,
+    docsStatus,
+    selectedDoc,
+    targetLang,
+    voiceEnabled,
+    selectedSpeaker,
+    handleSelectDoc,
+  ]);
+
+  useEffect(() => {
+    if (!embedded || !onControlsChange) return undefined;
+    return () => onControlsChange(null);
+  }, [embedded, onControlsChange]);
 
   const appendMessage = (role, content, meta = {}) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setConversation((prev) => [
       ...prev,
       {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id,
         role,
         content,
         createdAt: new Date().toLocaleTimeString([], {
@@ -130,6 +398,7 @@ function Retrieval() {
         ...meta,
       },
     ]);
+    return id;
   };
 
   const handleCopy = () => {
@@ -175,11 +444,12 @@ function Retrieval() {
     setStatus("loading");
     setMessage("");
     setResult(null);
-    appendMessage("user", trimmedQuery, {
+    const questionId = appendMessage("user", trimmedQuery, {
       docTitle: selectedDoc.title,
       targetLabel,
       source: "text",
     });
+    latestQuestionIdRef.current = questionId;
     setQuery("");
 
     try {
@@ -232,7 +502,7 @@ function Retrieval() {
     const answerText = data.content || data.answer || "";
 
     if (transcript) {
-      appendMessage("user", transcript, {
+      latestQuestionIdRef.current = appendMessage("user", transcript, {
         docTitle: selectedDoc?.title,
         targetLabel,
         source: "voice",
@@ -262,18 +532,18 @@ function Retrieval() {
   // console.log("selectedSpeaker", selectedSpeaker)
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(248,190,80,0.16),_transparent_28%),linear-gradient(135deg,_#060816_0%,_#12172a_45%,_#0b1020_100%)] text-slate-100 font-body">
+    <div className={`${embedded ? 'min-h-[70vh]' : 'min-h-screen'} bg-[radial-gradient(circle_at_top_left,_rgba(248,190,80,0.16),_transparent_28%),linear-gradient(135deg,_#060816_0%,_#12172a_45%,_#0b1020_100%)] text-slate-100 font-body` }>
       <FontImports />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500&display=swap');
         .font-reading { font-family: 'Source Serif 4', Georgia, serif; }
       `}</style>
-      <Header variant="back" />
+      {!embedded && <Header variant="back" />}
 
-      <PageTransition className="px-4 py-4 md:py-8 md:px-6 lg:px-8">
+      <PageTransition className={`${embedded ? 'px-0 py-0' : 'px-4 py-4 md:py-8 md:px-6 lg:px-8'}`}>
         <div className="mx-auto max-w-7xl">
           <div className="grid md:gap-6  lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="lg:hidden">
+            {!embedded && <div className="lg:hidden">
               <div className="mb-4 flex items-center gap-4 rounded-xl border border-white/10 bg-slate-950/70 px-4 py-3 shadow-[0_10px_35px_rgba(0,0,0,0.2)] backdrop-blur-xl">
                 <button
                   type="button"
@@ -291,9 +561,9 @@ function Retrieval() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div>}
 
-            <div className="lg:hidden">
+            {!embedded && <div className="lg:hidden">
               {sidebarOpen && (
                 <button
                   type="button"
@@ -302,9 +572,9 @@ function Retrieval() {
                   aria-label="Close sidebar"
                 />
               )}
-            </div>
+            </div>}
 
-            <aside
+            {!embedded && <aside
               className={`fixed left-0 top-0 z-50 h-full space-y-12 md:space-y-0 md:flex flex-col justify-between w-[88vw] max-w-[320px] rounded-r-[28px] lg:rounded-md border-r border-white/10 bg-slate-950/90 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.38)] backdrop-blur-xl transition-transform duration-300 ease-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:sticky lg:top-24 lg:h-auto lg:w-full lg:translate-x-0  lg:border lg:bg-slate-950/70 lg:shadow-[0_20px_70px_rgba(0,0,0,0.25)]`}
             >
               <div className=" md:mt-0  mt-5 flex items-start justify-between">
@@ -533,40 +803,43 @@ function Retrieval() {
                   </li>
                 </ul>
               </div>
-            </aside>
+            </aside>}
 
             <motion.main
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.06, duration: 0.22 }}
-              className="overflow-hidden md:h-[600px] rounded-md flex flex-col justify-between  border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl"
+              className={`flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl ${embedded ? 'min-h-[calc(100dvh-6rem)] md:min-h-0 md:h-[calc(100dvh-7rem)] lg:col-span-2' : 'min-h-[500px] md:h-[min(70vh,760px)]'}`}
             >
-              <div className="flex flex-wrap items-center justify-between border-b border-white/10 px-3 md:px-5 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-3 md:px-4">
                 <div>
-                  <p className="md:text-[11px] text-[9px] uppercase tracking-[0.35em] text-amber-400">
+                  <p className="text-[9px] uppercase tracking-[0.25em] text-amber-300">
                     Conversation agent
                   </p>
-                  <h3 className="md:text-lg text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-white md:text-base">
                     Ask, review, and iterate
                   </h3>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 truncate text-[9px] md:text-sm text-slate-300">
+                <div className="max-w-full truncate rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] text-slate-200 md:max-w-[45%]">
                   {selectedDoc
                     ? `Context: ${selectedDoc.title}`
                     : "Select a document to begin"}
                 </div>
               </div>
 
-              <div className="h-[350px] xl:h-[300px] overflow-x-hidden overflow-y-auto scrollbar-hide px-4 py-4 sm:px-5">
+              <div
+                ref={conversationViewportRef}
+                className={`studio-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4 sm:px-4 ${embedded ? '' : 'scrollbar-hide'}`}
+              >
                 {conversation.length === 0 && status === "idle" && (
-                  <div className="flex h-full h-[250px] flex-col items-center justify-center rounded-[24px] border border-dashed border-white/10 bg-gradient-to-br from-white/5 to-transparent px-6 py-10 text-center">
-                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/12 text-3xl text-amber-400">
+                  <div className="flex min-h-[240px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/10 bg-gradient-to-br from-white/[0.04] to-transparent px-5 py-6 text-center">
+                    <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400/12 text-2xl text-amber-300">
                       ✦
                     </div>
-                    <h4 className="text-xl font-semibold text-white">
+                    <h4 className="text-base font-semibold text-white">
                       Your next insight is one prompt away
                     </h4>
-                    <p className="mt-2 max-w-md text-sm leading-7 text-slate-400">
+                    <p className="mt-1.5 max-w-md text-xs leading-5 text-slate-300">
                       Choose a document, set your language, and start a grounded
                       conversation with your knowledge base.
                     </p>
@@ -581,50 +854,81 @@ function Retrieval() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.18 }}
-                      className={`mb-3 flex ${entry.role === "user" ? "justify-end" : "justify-start"} `}
+                      ref={
+                        entry.role === "user" && entry.id === latestQuestionIdRef.current
+                          ? (node) => { latestQuestionElementRef.current = node; }
+                          : undefined
+                      }
+                      className={`mb-4 flex gap-2.5 ${
+                        entry.role === "user" ? "justify-end" : "justify-start"
+                      }`}
                     >
-                      <div
-                        className={`max-w-[92%]  rounded-[22px] border px-3 md:px-4 py-1 md:py-2 shadow-sm sm:max-w-[80%] ${
-                          entry.role === "user"
-                            ? "border-amber-400/20 bg-amber-400/10 text-white"
-                            : entry.isError
-                              ? "border-rose-400/20 bg-rose-500/10 text-rose-100"
-                              : "border-white/10 bg-slate-900/90 text-slate-100"
-                        }`}
-                      >
-                        <div className="md:mb-2 text-[10px] uppercase tracking-[0.1em] text-slate-400">
-                          {entry.role === "user" ? "You" : "Assistant"}
+                      {entry.role === "assistant" && (
+                        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-amber-300/20 bg-amber-300/10 text-xs text-amber-200">
+                          ✦
                         </div>
-                        <p className="md:text-[14px] text-xs text-wrap break-all leading-[2rem]">
-                          {entry.content}
-                        </p>
-                        {entry.role === "assistant" && (
-                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                            {entry.keyWords?.length > 0 && (
-                              <div className="flex flex-wrap gap-2">
-                                {entry.keyWords.map((keyword, index) => (
-                                  <span
-                                    key={`${keyword}-${index}`}
-                                    className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-[10px] text-amber-300"
+                      )}
+                      <div className={`min-w-0 ${entry.role === "user" ? "max-w-[88%] sm:max-w-[76%]" : "w-full max-w-4xl"}`}>
+                        <div className={`mb-1 flex items-center gap-1.5 text-[9px] uppercase tracking-[0.14em] ${
+                          entry.role === "user" ? "justify-end text-slate-400" : "text-slate-300"
+                        }`}>
+                          <span className={entry.role === "assistant" ? "text-amber-200" : ""}>
+                            {entry.role === "user" ? "You" : "Research assistant"}
+                          </span>
+                          <span aria-hidden="true" className="text-slate-600">·</span>
+                          <time>{entry.createdAt}</time>
+                          {entry.docTitle && entry.role === "assistant" && (
+                            <>
+                              <span aria-hidden="true" className="text-slate-600">·</span>
+                              <span className="max-w-[180px] truncate normal-case tracking-normal text-slate-500">
+                                {entry.docTitle}
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        {entry.role === "user" ? (
+                          <div className="rounded-xl rounded-tr-md border border-amber-300/25 bg-amber-300/[0.10] px-3.5 py-2.5 text-sm leading-6 text-white shadow-[0_6px_20px_rgba(0,0,0,0.14)] whitespace-pre-wrap break-words">
+                            {entry.content}
+                          </div>
+                        ) : (
+                          <div className={`rounded-xl border px-3.5 py-3 sm:px-4 ${
+                            entry.isError
+                              ? "border-rose-400/30 bg-rose-500/[0.09] text-rose-100"
+                              : "border-white/[0.10] bg-white/[0.035] text-slate-100"
+                          }`}>
+                            <MarkdownContent content={entry.content} />
+                            {(entry.keyWords?.length > 0 || !entry.isError) && (
+                              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.09] pt-2">
+                                {entry.keyWords?.length > 0 ? (
+                                  <div className="flex flex-wrap gap-2">
+                                    {entry.keyWords.map((keyword, index) => (
+                                      <span
+                                        key={`${keyword}-${index}`}
+                                        className="rounded-full border border-amber-300/15 bg-amber-300/[0.07] px-2.5 py-1 text-[10px] text-amber-200"
+                                      >
+                                        {keyword}
+                                      </span>
+                                    ))}
+                                  </div>
+                                ) : <span />}
+                                {!entry.isError && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyEntry(entry.content, entry.id)}
+                                    aria-label="Copy assistant response"
+                                    title="Copy response"
+                                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 text-slate-300 transition hover:border-amber-300/40 hover:text-amber-100"
                                   >
-                                    {keyword}
-                                  </span>
-                                ))}
+                                    {copiedEntryId === entry.id ? (
+                                      <FiCheck size={14} />
+                                    ) : (
+                                      <FiCopy size={14} />
+                                    )}
+                                  </button>
+                                )}
                               </div>
                             )}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleCopyEntry(entry.content, entry.id)
-                              }
-                              className="rounded-full border border-white/10 px-2.5 py-1.5 text-[11px] text-slate-300 transition hover:border-amber-400/40 hover:text-white"
-                            >
-                              {copiedEntryId === entry.id ? (
-                                <FiCheck size={12} />
-                              ) : (
-                                <FiCopy size={12} />
-                              )}
-                            </button>
                           </div>
                         )}
                       </div>
@@ -633,22 +937,18 @@ function Retrieval() {
                 </AnimatePresence>
 
                 {status === "loading" && (
-                  <div className="flex justify-start">
-                    <div className="rounded-[22px] border border-white/10 bg-slate-900/90 px-4 py-3">
-                      <div className="mb-2 text-[10px] uppercase tracking-[0.3em] text-slate-400">
-                        Assistant
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-300">
+                  <div className="mb-3 flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-amber-300/20 bg-amber-300/10 text-xs text-amber-200">✦</div>
+                    <div className="flex items-center gap-2 text-xs text-slate-300">
                         <span className="h-2 w-2 animate-pulse rounded-full bg-amber-400" />
                         <span>Thinking through the document context…</span>
-                      </div>
                     </div>
                   </div>
                 )}
               </div>
 
               {message && (
-                <div className="md:mx-4 mx-2 mb-4 rounded-2xl border border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 sm:mx-5">
+                <div className="mx-3 mb-2 rounded-xl border border-rose-400/35 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-100 sm:mx-4">
                   {message}
                 </div>
               )}
@@ -658,10 +958,10 @@ function Retrieval() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.08, duration: 0.2 }}
                 onSubmit={handleSubmit}
-                className="bg-slate-950/70 px-2 md:px-4 py-4 sm:px-5"
+                className="border-t border-white/[0.08] bg-slate-950/70 px-3 py-3 sm:px-4"
               >
-                <div className="rounded-[24px] border border-white/10  bg-slate-950/70 p-3 md:p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
-                  <label className="mb-2 block px-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-slate-400">
+                <div className="rounded-xl border border-white/15 bg-slate-900/80 p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:p-3">
+                  <label className="mb-1 block px-1.5 text-[9px] font-semibold uppercase tracking-[0.22em] text-slate-300">
                     Ask a question
                   </label>
                   <textarea
@@ -671,20 +971,20 @@ function Retrieval() {
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask in natural language, then let the agent synthesize the answer."
-                    className="h-14 w-full resize-none border-0 bg-transparent px-2 pb-2 text-sm text-white outline-none placeholder:text-slate-500"
+                    className="h-11 w-full resize-none border-0 bg-transparent px-1.5 pb-1 text-[13px] leading-5 text-white outline-none placeholder:text-slate-400"
                   />
 
-                  <div className="mt-2 flex  justify-between md:justify-none gap-1.5 md:gap-3 rounded-[18px] border border-white/10  bg-slate-900/80 px-1 md:px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-2 text-[10px] md:text-xs text-slate-400">
-                      <span className="rounded-full border border-amber-400/20 bg-amber-400/10 px-2.5 py-1 text-amber-300">
+                  <div className="mt-1.5 flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-slate-950/80 px-2 py-1.5 sm:px-2.5">
+                    <div className="flex items-center gap-2 text-[10px] text-slate-300">
+                      <span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-amber-200">
                         Grounded answer
                       </span>
-                      <span className="md:block hidden">
+                      <span className="hidden text-slate-400 md:block">
                         Shift + Enter for a new line
                       </span>
                     </div>
 
-                    <div className="flex  items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <VoiceInput
                         selectedDoc={selectedDoc}
                         targetLang={targetLang}
@@ -706,7 +1006,7 @@ function Retrieval() {
                         whileTap={{ scale: 0.98 }}
                         type="submit"
                         disabled={status === "loading"}
-                        className="flex items-center gap-2 rounded-full bg-amber-400  px-3 py-1.5 text-xs md:font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="flex items-center gap-1.5 rounded-full bg-amber-300 px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         <FiSend size={12} />
                         {status === "loading" ? "Thinking…" : "Send"}

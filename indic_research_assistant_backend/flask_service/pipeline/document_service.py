@@ -7,6 +7,7 @@ from utils.node_client import register_doc_with_node
 from pipeline.ingestion import ingest_document
 
 MAX_PAGES = 10
+MAX_SHORT_SCRIPT_BYTES = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg", ".zip"}
 
 
@@ -62,17 +63,15 @@ def _extract_text_from_output(zip_path: str) -> str:
     return "\n\n".join(text_parts)
 
 
-def process_and_ingest(file_storage, email: str, title: str = None) -> dict:
-    """
-    Entry point for app.py's /ingest route.
-    Owns: input validation, page-count check, Sarvam OCR job, text extraction.
-    Hands off cleanly to ingest_document() for chunk + embed + upsert only.
-    """
-    ext, title = _validate_upload(file_storage, email, title)
-
+def _extract_uploaded_text(file_storage, ext: str, max_file_size: int = None) -> str:
     with tempfile.TemporaryDirectory() as tmp_dir:
-        local_path = os.path.join(tmp_dir, file_storage.filename)
+        local_path = os.path.join(tmp_dir, f"upload{ext}")
         file_storage.save(local_path)
+
+        if max_file_size is not None and os.path.getsize(local_path) > max_file_size:
+            raise DocumentValidationError(
+                f"File exceeds the {max_file_size // (1024 * 1024)} MB size limit."
+            )
 
         _check_page_count(local_path, ext)
 
@@ -89,11 +88,38 @@ def process_and_ingest(file_storage, email: str, title: str = None) -> dict:
 
         output_zip_path = os.path.join(tmp_dir, "output.zip")
         job.download_output(output_zip_path)
-
         extracted_text = _extract_text_from_output(output_zip_path)
 
     if not extracted_text.strip():
         raise RuntimeError("No text could be extracted from the document.")
+
+    return extracted_text
+
+
+def extract_short_script_text(file_storage) -> str:
+    if not file_storage or not file_storage.filename:
+        raise DocumentValidationError("file is required")
+
+    ext = os.path.splitext(file_storage.filename)[1].lower()
+    if ext != ".pdf":
+        raise DocumentValidationError("Short script OCR only supports PDF files.")
+
+    return _extract_uploaded_text(
+        file_storage,
+        ext,
+        max_file_size=MAX_SHORT_SCRIPT_BYTES,
+    )
+
+
+def process_and_ingest(file_storage, email: str, title: str = None) -> dict:
+    """
+    Entry point for app.py's /ingest route.
+    Owns: input validation, page-count check, Sarvam OCR job, text extraction.
+    Hands off cleanly to ingest_document() for chunk + embed + upsert only.
+    """
+    ext, title = _validate_upload(file_storage, email, title)
+
+    extracted_text = _extract_uploaded_text(file_storage, ext)
 
     # ingest_document() is pure: chunk -> embed -> upsert. No file/OCR logic in it.
     result = ingest_document(title=title, content=extracted_text, email=email)

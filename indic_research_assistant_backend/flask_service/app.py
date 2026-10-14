@@ -6,12 +6,16 @@ from pipeline.retrieval import ask
 from pipeline.document_service import process_and_ingest, DocumentValidationError
 from pipeline.retrieval import ask as get_answer
 from pipeline.tts_service import get_audio
+from sarvam_integration.shorts_scripts import shorts_scripts_bp
+from sarvam_integration.shorts_audio import shorts_audio_bp
 import tempfile, os
 
 from sarvamai import SarvamAI
 SARVAM_API_KEY = os.getenv('SARVAM_API_KEY')
 client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
 app = Flask(__name__)
+app.register_blueprint(shorts_scripts_bp)
+app.register_blueprint(shorts_audio_bp)
 
 CORS(app, resources={
     r"/ask": {"origins":["https://indic-research-scholar.vercel.app", "http://localhost:5173"]},
@@ -54,7 +58,11 @@ def transcribe():
     if not doc_id:
         return jsonify({"error": "doc_id is required"}), 400
 
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+    uploaded_extension = os.path.splitext(audio_file.filename or "")[1].lower()
+    audio_extension = uploaded_extension if uploaded_extension in {
+        ".webm", ".ogg", ".mp4", ".wav", ".mp3", ".m4a", ".flac"
+    } else ".webm"
+    with tempfile.NamedTemporaryFile(suffix=audio_extension, delete=False) as tmp:
         audio_file.save(tmp.name)
         tmp_path = tmp.name
 
@@ -91,9 +99,7 @@ def transcribe():
         result["audio"] = audio_b64 or None
         result["transcript"] = transcript          # ✅ return transcript so UI can show it
         result["detected_language"] = detected_language
-        print("\nresponse: ", jsonify(result))
-
-        return jsonify(result['content']), 200
+        return jsonify(result), 200
 
     except Exception as e:
         print("transcribe error:", str(e))

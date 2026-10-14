@@ -4,6 +4,7 @@ function SpeakerSelect({
   speakers,
   selectedSpeaker,
   setSelectedSpeaker,
+  scrollbarClassName = "scrollbar-hide",
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -32,7 +33,7 @@ function SpeakerSelect({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between rounded-xl border border-slate-700/60 bg-slate-900/80 px-3 py-1.5 text-sm text-slate-100 transition-all hover:border-indigo-500/40  focus:outline-none "
+        className="flex w-full items-center justify-between rounded-md border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-slate-100 transition-all hover:border-amber-400/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/20"
       >
         <span className="text-xs">{selectedSpeaker}</span>
 
@@ -53,8 +54,8 @@ function SpeakerSelect({
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border border-slate-700 bg-slate-900 shadow-2xl">
-          <div className="max-h-96 overflow-y-auto scrollbar-hide py-2">
+        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-lg border border-white/10 bg-slate-900 text-slate-100 shadow-2xl">
+          <div className={`max-h-96 overflow-y-auto ${scrollbarClassName} py-2`}>
             {speakers.map((speaker) => (
               <button
                 key={speaker}
@@ -65,8 +66,8 @@ function SpeakerSelect({
                 }}
                 className={`flex w-full items-center justify-between px-4 py-2.5 text-left text-xs transition-colors ${
                   selectedSpeaker === speaker
-                    ? "bg-indigo-500/20 text-indigo-300"
-                    : "text-slate-200 hover:bg-slate-800"
+                    ? "bg-amber-400/15 text-amber-200"
+                    : "text-slate-200 hover:bg-white/5 hover:text-white"
                 }`}
               >
                 <span>{speaker}</span>

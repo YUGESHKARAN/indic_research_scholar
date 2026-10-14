@@ -41,7 +41,7 @@ the scope is too broad — split it.
 Do not modify the following unless explicitly instructed:
 - implemented flask backend APIs and middleware - /indic_research_assistant_backend/flask_service/
 - implemented nodejs backend Auths, middleware and controller - ./indic_research_assistant_backend/nodejs_service/
-- implemented Upload and Q&A screens and logics -./indic_research_assistant_frontend/src
+- implemented Upload and Q&A screens and logics - ./indic_research_assistant_frontend/src
 - ./indic_research_assistant_frontend/.env 
 - ./indic_research_assistant_backend/flask_service/.env
 - ./indic_research_assistant_backend/nodejs_service/.env

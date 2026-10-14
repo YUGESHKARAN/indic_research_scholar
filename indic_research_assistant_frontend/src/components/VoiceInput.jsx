@@ -35,9 +35,21 @@ export default function VoiceInput({ selectedDoc, targetLang, selectedSpeaker, o
       return
     }
 
+    let stream
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' })
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const supportedMimeTypes = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ]
+      const mimeType = supportedMimeTypes.find((type) =>
+        MediaRecorder.isTypeSupported(type),
+      )
+      const mediaRecorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
       chunksRef.current = []
 
@@ -47,29 +59,44 @@ export default function VoiceInput({ selectedDoc, targetLang, selectedSpeaker, o
 
       mediaRecorder.onstop = () => {
         stream.getTracks().forEach((track) => track.stop())
-        sendToBackend()
+        const recordedBlob = new Blob(chunksRef.current, {
+          type: mediaRecorder.mimeType || chunksRef.current[0]?.type || 'application/octet-stream',
+        })
+        sendToBackend(recordedBlob)
       }
 
       mediaRecorder.start()
       setRecording(true)
       setStatus('recording')
     } catch (err) {
+      stream?.getTracks().forEach((track) => track.stop())
       setStatus('error')
       setErrorMsg('Mic access denied: ' + err.message)
     }
   }
 
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop()
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return
+    mediaRecorderRef.current.stop()
     setRecording(false)
     setStatus('transcribing')
   }
 
-  const sendToBackend = async () => {
+  const sendToBackend = async (blob) => {
     try {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
+      if (!blob.size) {
+        throw new Error('No audio was captured. Please try recording again.')
+      }
+
+      const extension = blob.type.includes('webm')
+        ? 'webm'
+        : blob.type.includes('ogg')
+          ? 'ogg'
+          : blob.type.includes('mp4')
+            ? 'mp4'
+            : 'webm'
       const formData = new FormData()
-      formData.append('audio', blob, 'recording.webm')
+      formData.append('audio', blob, `recording.${extension}`)
       formData.append('doc_id', selectedDoc.doc_id)
       formData.append('language', targetLang || 'unknown')
       formData.append('speaker', selectedSpeaker || 'Shubh')
@@ -77,6 +104,10 @@ export default function VoiceInput({ selectedDoc, targetLang, selectedSpeaker, o
       const res = await axios.post(`${FLASK_BASE_URL}/transcribe`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
+
+      if (!res.data || typeof res.data !== 'object' || !res.data.transcript) {
+        throw new Error('Speech was processed, but no transcript was returned. Please try again.')
+      }
 
       setStatus('done')
       onResult(res.data)
