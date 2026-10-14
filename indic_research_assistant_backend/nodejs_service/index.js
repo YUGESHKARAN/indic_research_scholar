@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/scholar.Route');
 const docRoutes = require('./routes/doc.Route');
+const shortsRoutes = require('./routes/shorts');
 const serverless = require("serverless-http");
 require('dotenv').config()
 const app = express();
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
  
 app.use('/api/scholar', authRoutes);
 app.use('/api', docRoutes);
+app.use('/api/shorts', shortsRoutes);
  
 // Fallback error handler
 app.use((err, req, res, next) => {
@@ -37,10 +39,10 @@ app.use((err, req, res, next) => {
 });
  
 // const PORT = process.env.PORT || 3000;
-// app.listen(PORT, () => {
-//   console.log(`Node API running on port ${PORT}`);
-// });
+app.listen(3000, () => {
+  console.log(`Node API running on port 3000`);
+});
 
 
-module.exports = app;
-module.exports.handler = serverless(app);
+// module.exports = app;
+// module.exports.handler = serverless(app);

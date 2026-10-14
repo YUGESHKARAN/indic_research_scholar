@@ -62,6 +62,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/workspace/shorts"
+          element={
+            <ProtectedRoute>
+              <Workspace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/workspace/presentation"
           element={
             <ProtectedRoute>

@@ -8,6 +8,7 @@ import {
   FiMenu,
   FiPlus,
   FiSettings,
+  FiVideo,
   FiZap,
   FiX,
 } from 'react-icons/fi';
@@ -16,11 +17,13 @@ import { useAuth } from '../AuthContext';
 import Retrieval from './Retrieval';
 import SpeakerSelect from './SpeakerSelect';
 import { FontImports } from './Shell';
+import WorkspaceShorts from '../pages/WorkspaceShorts';
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: FiBookOpen, to: '/workspace' },
   { id: 'qa', label: 'Q&A Studio', icon: FiZap, to: '/workspace/qa' },
   { id: 'documents', label: 'Documents', icon: FiFileText, to: '/workspace/documents' },
+  { id: 'shorts', label: 'Shorts Studio', icon: FiVideo, to: '/workspace/shorts' },
   { id: 'presentation', label: 'Presentation', icon: FiFileText, to: '/workspace/presentation' },
   { id: 'settings', label: 'Settings', icon: FiSettings, to: '/workspace/settings' },
 ];
@@ -280,6 +283,7 @@ function WorkspaceShell() {
   const activeId = useMemo(() => {
     if (location.pathname.includes('/workspace/qa')) return 'qa';
     if (location.pathname.includes('/workspace/documents')) return 'documents';
+    if (location.pathname.includes('/workspace/shorts')) return 'shorts';
     if (location.pathname.includes('/workspace/presentation')) return 'presentation';
     if (location.pathname.includes('/workspace/settings')) return 'settings';
     return 'overview';
@@ -313,7 +317,13 @@ function WorkspaceShell() {
                 <div>
                   <p className="text-[10px] uppercase tracking-[0.24em] text-amber-400/80">Research Studio</p>
                   <h1 className="text-base font-semibold text-white md:text-lg">
-                    {activeId === 'qa' ? 'Q&A Studio' : activeId === 'overview' ? 'Overview' : 'Workspace'}
+                    {activeId === 'qa'
+                      ? 'Q&A Studio'
+                      : activeId === 'shorts'
+                        ? 'Shorts Studio'
+                        : activeId === 'overview'
+                          ? 'Overview'
+                          : 'Workspace'}
                   </h1>
                 </div>
               </div>
@@ -377,6 +387,8 @@ function WorkspaceShell() {
           <main className="flex-1 p-4 md:p-6">
             {activeId === 'qa' ? (
               <Retrieval embedded onControlsChange={handleQAControlsChange} />
+            ) : activeId === 'shorts' ? (
+              <WorkspaceShorts />
             ) : (
               <div className="mx-auto max-w-6xl space-y-6">
                 <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.45)]">

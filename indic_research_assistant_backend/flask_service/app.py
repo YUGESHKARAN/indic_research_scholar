@@ -6,12 +6,16 @@ from pipeline.retrieval import ask
 from pipeline.document_service import process_and_ingest, DocumentValidationError
 from pipeline.retrieval import ask as get_answer
 from pipeline.tts_service import get_audio
+from sarvam_integration.shorts_scripts import shorts_scripts_bp
+from sarvam_integration.shorts_audio import shorts_audio_bp
 import tempfile, os
 
 from sarvamai import SarvamAI
 SARVAM_API_KEY = os.getenv('SARVAM_API_KEY')
 client = SarvamAI(api_subscription_key=SARVAM_API_KEY)
 app = Flask(__name__)
+app.register_blueprint(shorts_scripts_bp)
+app.register_blueprint(shorts_audio_bp)
 
 CORS(app, resources={
     r"/ask": {"origins":["https://indic-research-scholar.vercel.app", "http://localhost:5173"]},

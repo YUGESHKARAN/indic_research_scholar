@@ -173,8 +173,8 @@ import { useAuth } from "../AuthContext";
 import { useNavigate } from "react-router-dom";
 import { PageTransition } from './PageTransition'
 
-// const FLASK_BASE_URL = 'http://127.0.0.1:5000'
-const FLASK_BASE_URL = "https://indic-research-scholar.onrender.com";
+const FLASK_BASE_URL = 'http://127.0.0.1:5000'
+// const FLASK_BASE_URL = "https://indic-research-scholar.onrender.com";
 
 const PIPELINE_STEPS = [
   {
