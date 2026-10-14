@@ -1,8 +1,8 @@
 import { useState, useRef } from 'react'
 import axios from 'axios'
 
-const FLASK_BASE_URL = 'http://localhost:5000'
-// const FLASK_BASE_URL = 'https://indic-research-scholar.onrender.com'
+// const FLASK_BASE_URL = 'http://localhost:5000'
+const FLASK_BASE_URL = 'https://indic-research-scholar.onrender.com'
 function playBase64Audio(b64) {
   const bytes = Uint8Array.from(atob(b64), (char) => char.charCodeAt(0))
   const blob = new Blob([bytes], { type: 'audio/mpeg' })
