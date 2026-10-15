@@ -43,6 +43,7 @@ const sceneSchema = new mongoose.Schema(
     type: { type: String, enum: SCENE_TYPES, required: true },
     content: { type: String, required: true, trim: true },
     narration: { type: String, trim: true },
+    narrationTranslations: { type: Map, of: String, default: {} },
     visual: { type: visualSchema, required: true },
   },
   { _id: false }
@@ -51,6 +52,8 @@ const sceneSchema = new mongoose.Schema(
 const audioFileSchema = new mongoose.Schema(
   {
     language: { type: String, enum: INDIC_LANGUAGES, required: true },
+    sourceLanguage: { type: String, enum: INDIC_LANGUAGES },
+    speaker: { type: String, trim: true },
     file: { type: String, required: true },
     duration: { type: Number, min: 0 },
     videoFile: String,

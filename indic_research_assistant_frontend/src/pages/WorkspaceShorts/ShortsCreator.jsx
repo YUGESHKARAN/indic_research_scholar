@@ -12,6 +12,7 @@ function errorMessage(error) {
 export default function ShortsCreator({ onCreated, onCancel }) {
   const [file, setFile] = useState(null);
   const [userPrompt, setUserPrompt] = useState('');
+  const [targetDurationSeconds, setTargetDurationSeconds] = useState('');
   const [platform, setPlatform] = useState('youtube');
   const [resolution, setResolution] = useState('1080p');
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ export default function ShortsCreator({ onCreated, onCancel }) {
     const formData = new FormData();
     formData.append('scriptFile', file);
     formData.append('userPrompt', userPrompt);
+    formData.append('targetDurationSeconds', targetDurationSeconds);
     formData.append('platform', platform);
     formData.append('resolution', resolution);
     setLoading(true);
@@ -106,9 +108,32 @@ export default function ShortsCreator({ onCreated, onCancel }) {
               onChange={(event) => setUserPrompt(event.target.value)}
               maxLength={1000}
               rows={4}
-              placeholder="Describe the topic, audience, language, or target runtime. The AI will turn this into spoken narration and matching visuals."
+              placeholder="Describe the topic, audience, or language. The AI will turn this into spoken narration and matching visuals."
               className="w-full resize-y rounded-xl border border-white/10 bg-slate-900/80 px-3.5 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-amber-300/40 focus:ring-2 focus:ring-amber-300/10"
             />
+          </div>
+
+          <div>
+            <label htmlFor="short-duration" className="mb-2 block text-sm font-medium text-slate-200">
+              Target runtime
+            </label>
+            <div className="flex items-center gap-3">
+              <input
+                id="short-duration"
+                type="number"
+                min="30"
+                max="60"
+                step="1"
+                required
+                value={targetDurationSeconds}
+                onChange={(event) => setTargetDurationSeconds(event.target.value)}
+                className="w-28 rounded-xl border border-white/10 bg-slate-900/80 px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-amber-300/40 focus:ring-2 focus:ring-amber-300/10"
+              />
+              <span className="text-sm text-slate-400">seconds (30–60)</span>
+            </div>
+            <p className="mt-1.5 text-xs leading-5 text-slate-500">
+              If narration cannot fit after retrying, generation may extend the Short up to 90 seconds.
+            </p>
           </div>
         </div>
 

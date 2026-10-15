@@ -227,13 +227,19 @@ export default function WorkspaceShorts() {
     }
   };
 
-  const startRender = async (shortData, language, platform, resolution) => {
+  const startRender = async (
+    shortData,
+    language,
+    speaker,
+    platform,
+    resolution
+  ) => {
     setRendering(true);
     setRenderError('');
     try {
       const { data } = await api.post(
         `/api/shorts/${shortData.shortId}/render`,
-        { language, platform, resolution },
+        { language, speaker, platform, resolution },
       );
       setShort((current) => {
         if (!current || current.shortId !== shortData.shortId) return current;
@@ -242,6 +248,7 @@ export default function WorkspaceShorts() {
         );
         audioFiles.push({
           language,
+          speaker: data.speaker,
           file: data.audioFile,
           duration: data.audioDuration,
         });
@@ -267,17 +274,39 @@ export default function WorkspaceShorts() {
     }
   };
 
-  const saveScenesAndRender = async (scenes, language, platform, resolution) => {
+  const saveScenesAndRender = async (
+    scenes,
+    language,
+    speaker,
+    platform,
+    resolution
+  ) => {
     if (!short) return;
     setRenderError('');
     try {
       await api.patch(`/api/shorts/${short.shortId}/scenes`, {
-        scenes: scenes.map(({ id, duration }) => ({ id, duration })),
+        scenes: scenes.map(({
+          id,
+          duration,
+          narration,
+          narrationTranslations,
+        }) => ({
+          id,
+          duration,
+          narration,
+          narrationTranslations: narrationTranslations || {},
+        })),
       });
       const updatedShort = { ...short, scenes, platform, resolution };
       setShort(updatedShort);
       setView('player');
-      await startRender(updatedShort, language, platform, resolution);
+      await startRender(
+        updatedShort,
+        language,
+        speaker,
+        platform,
+        resolution
+      );
     } catch (error) {
       setRenderError(getErrorMessage(error, 'Could not save the scene edits.'));
     }
@@ -343,12 +372,14 @@ export default function WorkspaceShorts() {
           onRetry={() => startRender(
             short,
             selectedLanguage,
+            undefined,
             short.platform,
             short.resolution,
           )}
           onRenderLanguage={(language) => startRender(
             short,
             language,
+            undefined,
             short.platform,
             short.resolution,
           )}

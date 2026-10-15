@@ -40,10 +40,14 @@ function extractExplicitDuration(text) {
     /\b(?:target|total|requested|video|short)?\s*(?:duration|runtime|length)\s*(?:is|of|should\s+be|:|=|-)?\s*(\d+(?:\.\d+)?)\s*(seconds?|secs?|minutes?|mins?)\b/i;
   const promptPattern =
     /\b(?:make(?:\s+this)?|create|keep|target(?:ing)?|within|for)\s+(?:a\s+)?(\d+(?:\.\d+)?)\s*(seconds?|secs?|minutes?|mins?)\b/i;
+  const shortenPattern =
+    /\b(?:shorten|reduce|trim|cut)\b[\s\S]{0,80}?\b(?:down\s+to|to)\s+(?:a\s+)?(\d+(?:\.\d+)?)\s*(seconds?|secs?|minutes?|mins?)\b/i;
 
   for (const candidate of text) {
     const normalized = candidate.replace(/\*/g, '');
-    const match = normalized.match(durationPattern) || normalized.match(promptPattern);
+    const match = normalized.match(durationPattern)
+      || normalized.match(shortenPattern)
+      || normalized.match(promptPattern);
     if (match) return parseDurationSeconds(match[1], match[2]);
   }
   return null;
@@ -207,6 +211,16 @@ async function generateExplainerScenes(
       502
     );
   }
+  if (
+    targetDurationSeconds &&
+    payload.targetDurationSeconds !== targetDurationSeconds &&
+    payload.targetDurationSeconds !== 90
+  ) {
+    throw new ScriptParserError(
+      'Sarvam returned a runtime outside the requested target and 90-second fallback.',
+      502
+    );
+  }
 
   const generatedScenes = payload.scenes.map((scene, index) => {
     if (
@@ -244,7 +258,7 @@ async function generateExplainerScenes(
       },
     };
   });
-  const targetDuration = targetDurationSeconds || payload.targetDurationSeconds;
+  const targetDuration = payload.targetDurationSeconds;
   const narrationWordCount = generatedScenes.reduce(
     (total, scene) => total + scene.narration.split(/\s+/).length,
     0
@@ -404,7 +418,7 @@ async function extractScriptText(file) {
   );
 }
 
-async function parseScript(file, userPrompt = '') {
+async function parseScript(file, userPrompt = '', options = {}) {
   if (typeof userPrompt !== 'string') {
     throw new ScriptParserError('Additional context must be text.');
   }
@@ -431,11 +445,23 @@ async function parseScript(file, userPrompt = '') {
     text.match(/^#{1,6}\s*scene\s+\d+\b/gim) || []
   ).length;
   const intro = text.split(/^#{1,6}\s*scene\s+\d+\b/im, 1)[0];
+  const requestedDuration = options.targetDurationSeconds;
+  if (
+    requestedDuration !== undefined &&
+    (!Number.isInteger(requestedDuration) ||
+      requestedDuration < 30 ||
+      requestedDuration > 60)
+  ) {
+    throw new ScriptParserError(
+      'Choose a target runtime between 30 and 60 seconds.'
+    );
+  }
   const promptDuration = extractExplicitDuration([userPrompt]);
-  const documentDuration = extractExplicitDuration([
-    intro,
-  ]) ?? sceneDurations;
-  const targetDurationSeconds = promptDuration ?? documentDuration;
+  const documentDuration = extractExplicitDuration([intro]) ?? sceneDurations;
+  const targetDurationSeconds = requestedDuration
+    ?? promptDuration
+    ?? documentDuration;
+  const requestedSceneCount = requestedDuration === undefined ? sceneCount : null;
   if (
     targetDurationSeconds !== null &&
     (targetDurationSeconds < 1 || targetDurationSeconds > 300)
@@ -445,7 +471,8 @@ async function parseScript(file, userPrompt = '') {
     );
   }
 
-  const requestedSceneDurations = sceneDurationList &&
+  const requestedSceneDurations = requestedDuration === undefined &&
+    sceneDurationList &&
     (targetDurationSeconds === null ||
       sceneDurationList.reduce((total, duration) => total + duration, 0) === targetDurationSeconds)
     ? sceneDurationList
@@ -455,19 +482,23 @@ async function parseScript(file, userPrompt = '') {
     text,
     userPrompt,
     targetDurationSeconds,
-    sceneCount,
+    requestedSceneCount,
     requestedSceneDurations
   );
-  if (targetDurationSeconds && prepared.targetDurationSeconds !== targetDurationSeconds) {
+  if (
+    targetDurationSeconds &&
+    prepared.targetDurationSeconds !== targetDurationSeconds &&
+    !(requestedDuration !== undefined && prepared.targetDurationSeconds === 90)
+  ) {
     throw new ScriptParserError(
       'Sarvam did not honor the requested Shorts runtime.',
       502
     );
   }
   if (
-    sceneCount > 0 &&
-    targetDurationSeconds >= sceneCount &&
-    prepared.scenes.length !== sceneCount
+    requestedSceneCount > 0 &&
+    prepared.targetDurationSeconds >= requestedSceneCount &&
+    prepared.scenes.length !== requestedSceneCount
   ) {
     throw new ScriptParserError(
       'Sarvam did not preserve the scene count specified in the source document.',

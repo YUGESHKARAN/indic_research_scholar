@@ -14,6 +14,17 @@ const videoComposer = require('../services/videoComposer');
 const userId = '507f1f77bcf86cd799439011';
 const shortId = '123e4567-e89b-12d3-a456-426614174000';
 const token = jwt.sign({ id: userId }, process.env.JWT_SECRET);
+const defaultSpeakers = {
+  english: 'girish_en_documentary',
+  hindi: 'simran_hi_narration',
+  tamil: 'gokul_ta_narration',
+  telugu: 'kavitha_te_narration',
+  kannada: 'chaitra_kn_narration',
+  malayalam: 'shubh',
+  bengali: 'roopa_bn_conversational',
+  marathi: 'mrunal_mr_narration',
+  gujarati: 'bhavik_gu_conversation',
+};
 let storageRoot;
 let apiServer;
 let flaskServer;
@@ -24,6 +35,9 @@ let lookupQuery;
 let audioServiceStatus = 200;
 let audioServiceDuration = 3.25;
 let audioServiceCalls = 0;
+let translationServiceCalls = 0;
+let lastAudioPayload;
+let lastTranslationPayload;
 let composeCalls = 0;
 let savedDocuments = 0;
 let composeImplementation;
@@ -35,6 +49,7 @@ function makeShort() {
     userId,
     platform: 'youtube',
     resolution: '1080p',
+    narrationLanguage: 'hindi',
     scenes: [
       {
         id: 0,
@@ -59,11 +74,21 @@ before(async () => {
   process.env.INTERNAL_API_KEY = 'shorts-internal-test-key';
 
   flaskServer = http.createServer(async (request, response) => {
-    audioServiceCalls += 1;
     let requestBody = '';
     for await (const chunk of request) requestBody += chunk;
     const payload = JSON.parse(requestBody);
     response.setHeader('content-type', 'application/json');
+    if (request.url === '/api/shorts/scripts/translate') {
+      translationServiceCalls += 1;
+      lastTranslationPayload = payload;
+      response.end(JSON.stringify({
+        translations: payload.texts.map((text) => `translated: ${text}`),
+      }));
+      return;
+    }
+
+    audioServiceCalls += 1;
+    lastAudioPayload = payload;
     if (audioServiceStatus !== 200) {
       response.statusCode = audioServiceStatus;
       response.end(JSON.stringify({ error: 'Mock TTS failure.' }));
@@ -79,7 +104,9 @@ before(async () => {
     response.end(JSON.stringify({
       success: true,
       audioFile: `audio/${payload.shortId}_${payload.language}.wav`,
+      sourceLanguage: payload.sourceLanguage,
       language: payload.language,
+      speaker: payload.speaker || defaultSpeakers[payload.language],
       duration: audioServiceDuration,
     }));
   });
@@ -137,7 +164,7 @@ test('render fits requested scenes to selected-language audio and embeds it', as
       authorization: `Bearer ${token}`,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ language: 'tamil' }),
+    body: JSON.stringify({ language: 'tamil', speaker: 'vijay_ta_narration' }),
   });
   const payload = await response.json();
 
@@ -154,6 +181,12 @@ test('render fits requested scenes to selected-language audio and embeds it', as
   assert.equal(savedDocuments, 2);
   assert.equal(shortDocument.status, 'ready');
   assert.equal(shortDocument.audioFiles[0].language, 'tamil');
+  assert.equal(shortDocument.audioFiles[0].sourceLanguage, 'hindi');
+  assert.equal(shortDocument.audioFiles[0].speaker, 'vijay_ta_narration');
+  assert.equal(lastAudioPayload.sourceLanguage, 'hindi');
+  assert.equal(lastAudioPayload.language, 'tamil');
+  assert.equal(lastAudioPayload.speaker, 'vijay_ta_narration');
+  assert.equal(payload.speaker, 'vijay_ta_narration');
   assert.equal(
     shortDocument.videoFile,
     `public/videos/final/${shortId}_youtube_1080p_tamil.mp4`
@@ -195,6 +228,180 @@ test('renders an English voice track through the API', async () => {
   assert.equal(audioServiceCalls, 1);
   assert.equal(composeCalls, 1);
   assert.equal(lastComposeArguments[4].language, 'english');
+});
+
+test('saves edited narration and invalidates generated audio and video', async () => {
+  shortDocument = makeShort();
+  shortDocument.scenes[0].narration = 'The original narration.';
+  shortDocument.scenes[0].narrationTranslations = { tamil: 'Stale translation.' };
+  shortDocument.audioFiles = [{
+    language: 'hindi',
+    speaker: 'simran_hi_narration',
+    file: `audio/${shortId}_hindi.wav`,
+    duration: 5,
+    videoFile: `public/videos/final/${shortId}_youtube_1080p_hindi.mp4`,
+  }];
+  shortDocument.videoFile = `public/videos/final/${shortId}_youtube_1080p_hindi.mp4`;
+  shortDocument.videoUrl = `/api/shorts/${shortId}/video?language=hindi`;
+  shortDocument.videoLanguage = 'hindi';
+  shortDocument.status = 'ready';
+  savedDocuments = 0;
+
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/scenes`, {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      scenes: [{
+        id: 0,
+        duration: 5,
+        narration: '  The revised narration.  ',
+      }],
+    }),
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.success, true);
+  assert.equal(shortDocument.scenes[0].narration, 'The revised narration.');
+  assert.deepEqual(shortDocument.scenes[0].narrationTranslations, {});
+  assert.equal(shortDocument.audioFiles.length, 0);
+  assert.equal(shortDocument.videoFile, undefined);
+  assert.equal(shortDocument.videoUrl, undefined);
+  assert.equal(shortDocument.videoLanguage, undefined);
+  assert.equal(shortDocument.status, 'draft');
+  assert.equal(savedDocuments, 1);
+});
+
+test('saves edited translated narration without changing the source narration', async () => {
+  shortDocument = makeShort();
+  shortDocument.scenes[0].narration = 'Original narration.';
+  shortDocument.scenes[0].narrationTranslations = { tamil: 'Old translation.' };
+  shortDocument.audioFiles = [{
+    language: 'tamil',
+    file: `audio/${shortId}_tamil.wav`,
+    duration: 5,
+  }];
+  shortDocument.videoFile = `public/videos/final/${shortId}_youtube_1080p_tamil.mp4`;
+  shortDocument.videoUrl = `/api/shorts/${shortId}/video?language=tamil`;
+  shortDocument.videoLanguage = 'tamil';
+  savedDocuments = 0;
+
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/scenes`, {
+    method: 'PATCH',
+    headers: {
+      authorization: 'Bearer ' + token,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      scenes: [{
+        id: 0,
+        duration: 5,
+        narration: 'Original narration.',
+        narrationTranslations: { tamil: 'Updated Tamil narration.' },
+      }],
+    }),
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.success, true);
+  assert.equal(shortDocument.scenes[0].narration, 'Original narration.');
+  assert.deepEqual(shortDocument.scenes[0].narrationTranslations, {
+    tamil: 'Updated Tamil narration.',
+  });
+  assert.equal(shortDocument.audioFiles.length, 0);
+  assert.equal(shortDocument.videoFile, undefined);
+  assert.equal(savedDocuments, 1);
+});
+
+test('translates and persists narration for a selected language', async () => {
+  shortDocument = makeShort();
+  translationServiceCalls = 0;
+  savedDocuments = 0;
+
+  const response = await fetch(
+    `${apiUrl}/api/shorts/${shortId}/translate/tamil`,
+    {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + token },
+    }
+  );
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(payload, {
+    language: 'tamil',
+    scenes: [{ id: 0, narration: 'translated: Narration for the short.' }],
+  });
+  assert.equal(translationServiceCalls, 1);
+  assert.equal(lastTranslationPayload.sourceLanguage, 'hindi');
+  assert.equal(lastTranslationPayload.targetLanguage, 'tamil');
+  assert.deepEqual(
+    shortDocument.scenes[0].narrationTranslations,
+    { tamil: 'translated: Narration for the short.' }
+  );
+  assert.equal(savedDocuments, 1);
+
+  const cachedResponse = await fetch(
+    `${apiUrl}/api/shorts/${shortId}/translate/tamil`,
+    {
+      method: 'POST',
+      headers: { authorization: 'Bearer ' + token },
+    }
+  );
+  assert.equal(cachedResponse.status, 200);
+  assert.equal(translationServiceCalls, 1);
+  assert.equal(savedDocuments, 1);
+});
+
+test('uses saved translated narration as the audio source without retranslating', async () => {
+  shortDocument = makeShort();
+  shortDocument.scenes[0].narrationTranslations = {
+    tamil: 'தமிழில் மொழிபெயர்க்கப்பட்ட உரை.',
+  };
+  audioServiceCalls = 0;
+  translationServiceCalls = 0;
+
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/render`, {
+    method: 'POST',
+    headers: {
+      authorization: 'Bearer ' + token,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({ language: 'tamil' }),
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(audioServiceCalls, 1);
+  assert.equal(translationServiceCalls, 0);
+  assert.equal(lastAudioPayload.script, 'தமிழில் மொழிபெயர்க்கப்பட்ட உரை.');
+  assert.equal(lastAudioPayload.sourceLanguage, 'tamil');
+});
+
+test('rejects empty edited narration without saving scene changes', async () => {
+  shortDocument = makeShort();
+  shortDocument.scenes[0].narration = 'The original narration.';
+  savedDocuments = 0;
+
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/scenes`, {
+    method: 'PATCH',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      scenes: [{ id: 0, duration: 5, narration: '   ' }],
+    }),
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.match(payload.error, /narration must contain/);
+  assert.equal(shortDocument.scenes[0].narration, 'The original narration.');
+  assert.equal(savedDocuments, 0);
 });
 
 test('renders successfully when narration is shorter than the requested scene timeline', async () => {
@@ -285,6 +492,7 @@ test('reuses an existing valid language WAV instead of calling Sarvam again', as
   shortDocument = makeShort();
   shortDocument.audioFiles = [{
     language: 'hindi',
+    speaker: 'simran_hi_narration',
     file: `audio/${shortId}_hindi.wav`,
     duration: 5,
   }];
@@ -309,6 +517,71 @@ test('reuses an existing valid language WAV instead of calling Sarvam again', as
 
   assert.equal(response.status, 200);
   assert.equal(audioServiceCalls, 0);
+  assert.equal(savedDocuments, 1);
+});
+
+test('regenerates cached audio when a different speaker is selected', async () => {
+  shortDocument = makeShort();
+  shortDocument.audioFiles = [{
+    language: 'hindi',
+    speaker: 'simran_hi_narration',
+    file: `audio/${shortId}_hindi.wav`,
+    duration: 5,
+  }];
+  const existingAudioPath = path.join(
+    storageRoot,
+    'audio',
+    `${shortId}_hindi.wav`
+  );
+  await fs.mkdir(path.dirname(existingAudioPath), { recursive: true });
+  await fs.writeFile(existingAudioPath, 'cached wav');
+  audioServiceStatus = 200;
+  audioServiceCalls = 0;
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/render`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      language: 'hindi',
+      speaker: 'anand_hi_documentary',
+    }),
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(audioServiceCalls, 1);
+  assert.equal(lastAudioPayload.speaker, 'anand_hi_documentary');
+  assert.equal(shortDocument.audioFiles[0].speaker, 'anand_hi_documentary');
+  assert.equal(payload.speaker, 'anand_hi_documentary');
+});
+
+test('regenerates legacy translated audio that has no source-language metadata', async () => {
+  shortDocument = makeShort();
+  shortDocument.audioFiles = [{
+    language: 'tamil',
+    file: `audio/${shortId}_tamil.wav`,
+    duration: 5,
+  }];
+  const oldAudioPath = path.join(
+    storageRoot,
+    'audio',
+    `${shortId}_tamil.wav`
+  );
+  await fs.mkdir(path.dirname(oldAudioPath), { recursive: true });
+  await fs.writeFile(oldAudioPath, 'legacy untranslated wav');
+  audioServiceCalls = 0;
+  savedDocuments = 0;
+
+  const response = await fetch(`${apiUrl}/api/shorts/${shortId}/audio/tamil`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}` },
+  });
+  assert.equal(response.status, 200);
+  assert.equal(audioServiceCalls, 1);
+  assert.equal(lastAudioPayload.sourceLanguage, 'hindi');
+  assert.equal(shortDocument.audioFiles[0].sourceLanguage, 'hindi');
   assert.equal(savedDocuments, 1);
 });
 
@@ -490,10 +763,21 @@ test('generates another language WAV without rerendering the video', async () =>
   assert.equal(composeCalls, 0);
   assert.equal(savedDocuments, 1);
   assert.equal(shortDocument.audioFiles[0].file, `audio/${shortId}_marathi.wav`);
+  assert.equal(shortDocument.audioFiles[0].sourceLanguage, 'hindi');
+  assert.equal(lastAudioPayload.sourceLanguage, 'hindi');
 });
 
 test('returns an owner-filtered short detail for resuming the editor', async () => {
   shortDocument = makeShort();
+  shortDocument.scenes[0].narrationTranslations = {
+    tamil: 'தமிழில் பேசப்படும் உரை.',
+  };
+  shortDocument.audioFiles = [{
+    language: 'tamil',
+    speaker: 'vijay_ta_narration',
+    file: `audio/${shortId}_tamil.wav`,
+    duration: 5,
+  }];
   const originalFindOne = Short.findOne;
   Short.findOne = (query) => {
     lookupQuery = query;
@@ -507,6 +791,10 @@ test('returns an owner-filtered short detail for resuming the editor', async () 
     assert.equal(response.status, 200);
     assert.equal(payload.shortId, shortId);
     assert.equal(payload.scenes[0].content, 'Narration for the short.');
+    assert.deepEqual(payload.scenes[0].narrationTranslations, {
+      tamil: 'தமிழில் பேசப்படும் உரை.',
+    });
+    assert.equal(payload.audioFiles[0].speaker, 'vijay_ta_narration');
     assert.deepEqual(lookupQuery, { shortId, userId });
   } finally {
     Short.findOne = originalFindOne;

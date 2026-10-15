@@ -78,7 +78,7 @@ class ShortsScriptPreparationTests(unittest.TestCase):
         completion.assert_called_once()
         self.assertEqual(completion.call_args.kwargs["model"], "sarvam-105b")
         self.assertIsNone(completion.call_args.kwargs["reasoning_effort"])
-        self.assertEqual(completion.call_args.kwargs["max_tokens"], 2500)
+        self.assertEqual(completion.call_args.kwargs["max_tokens"], 3000)
         self.assertIn(
             "Use exactly 90 seconds",
             completion.call_args.kwargs["messages"][1]["content"],
@@ -92,12 +92,144 @@ class ShortsScriptPreparationTests(unittest.TestCase):
             completion.call_args.kwargs["messages"][1]["content"],
         )
         self.assertIn(
-            "at least 225 spoken words",
+            "at least 135 spoken words",
             completion.call_args.kwargs["messages"][1]["content"],
         )
         system_prompt = completion.call_args.kwargs["messages"][0]["content"]
         self.assertIn("Never narrate those labels or read metadata", system_prompt)
         self.assertIn("return only json", system_prompt.lower())
+
+    def test_accepts_natural_paced_narration_for_requested_duration(self):
+        narration = " ".join(f"word{index}" for index in range(72))
+        model_result = {
+            "title": "A concise explainer",
+            "targetDurationSeconds": 40,
+            "scenes": [{
+                "type": "concept",
+                "visualTitle": "The key idea",
+                "visualDescription": "Show the key idea simply.",
+                "narration": narration,
+            }],
+        }
+        completion = Mock(return_value=SimpleNamespace(
+            choices=[SimpleNamespace(message=SimpleNamespace(
+                content=json.dumps(model_result)
+            ))]
+        ))
+        mock_client = SimpleNamespace(
+            chat=SimpleNamespace(completions=completion)
+        )
+        with patch.object(shorts_scripts, "sarvam_client", mock_client):
+            response = self.post_prepare({
+                "sourceText": "Duration: 40 seconds.",
+                "targetDurationSeconds": 40,
+                "requestedSceneCount": 1,
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "at least 60 spoken words",
+            completion.call_args.kwargs["messages"][1]["content"],
+        )
+
+    def test_retries_short_narration_with_specific_expansion_guidance(self):
+        short_result = {
+            "title": "A concise explainer",
+            "targetDurationSeconds": 40,
+            "scenes": [{
+                "type": "concept",
+                "visualTitle": "The key idea",
+                "visualDescription": "Show the key idea simply.",
+                "narration": " ".join(f"word{index}" for index in range(40)),
+            }],
+        }
+        complete_result = {
+            **short_result,
+            "scenes": [{
+                **short_result["scenes"][0],
+                "narration": " ".join(f"word{index}" for index in range(60)),
+            }],
+        }
+        completion = Mock(side_effect=[
+            SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(
+                content=json.dumps(short_result)
+            ))]),
+            SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(
+                content=json.dumps(complete_result)
+            ))]),
+        ])
+        mock_client = SimpleNamespace(
+            chat=SimpleNamespace(completions=completion)
+        )
+        with patch.object(shorts_scripts, "sarvam_client", mock_client):
+            response = self.post_prepare({
+                "sourceText": "A short source document.",
+                "targetDurationSeconds": 40,
+                "requestedSceneCount": 1,
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(completion.call_count, 2)
+        retry_prompt = completion.call_args_list[1].kwargs["messages"][1]["content"]
+        self.assertIn("has 40 spoken words, but needs at least 60", retry_prompt)
+        self.assertIn("not repetition", retry_prompt)
+
+    def test_uses_90_second_fallback_only_after_two_short_responses(self):
+        short_result = {
+            "title": "A concise explainer",
+            "targetDurationSeconds": 60,
+            "scenes": [{
+                "type": "concept",
+                "visualTitle": "The key idea",
+                "visualDescription": "Show the key idea simply.",
+                "narration": " ".join(f"word{index}" for index in range(89)),
+            }],
+        }
+        fallback_result = {
+            **short_result,
+            "targetDurationSeconds": 90,
+            "scenes": [{
+                **short_result["scenes"][0],
+                "narration": " ".join(f"word{index}" for index in range(135)),
+            }],
+        }
+        completion = Mock(side_effect=[
+            *[
+                SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(
+                    content=json.dumps(short_result)
+                ))])
+                for _ in range(2)
+            ],
+            SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(
+                content=json.dumps(fallback_result)
+            ))]),
+        ])
+        mock_client = SimpleNamespace(
+            chat=SimpleNamespace(completions=completion)
+        )
+        with patch.object(shorts_scripts, "sarvam_client", mock_client):
+            response = self.post_prepare({
+                "sourceText": "Duration: 90 seconds. The requested runtime is supplied separately.",
+                "targetDurationSeconds": 60,
+                "requestedSceneCount": 1,
+                "requestedSceneDurations": [60],
+            })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(completion.call_count, 3)
+        self.assertIn(
+            "Use exactly 60 seconds",
+            completion.call_args_list[0].kwargs["messages"][1]["content"],
+        )
+        self.assertIn(
+            "Use exactly 90 seconds",
+            completion.call_args_list[2].kwargs["messages"][1]["content"],
+        )
+        self.assertNotIn(
+            "Use these exact scene durations",
+            completion.call_args_list[2].kwargs["messages"][1]["content"],
+        )
+        self.assertEqual(response.get_json()["targetDurationSeconds"], 90)
 
     def test_rejects_invalid_duration_without_calling_sarvam(self):
         completion = Mock()
@@ -272,14 +404,14 @@ flowchart LR
         self.assertEqual(response.status_code, 200)
         self.assertEqual(completion.call_count, 2)
         self.assertIn(
-            "Include at least 150 spoken words total",
+            "Include at least 90 spoken words total",
             completion.call_args_list[1].kwargs["messages"][1]["content"],
         )
 
     def test_rejects_narration_still_short_after_one_retry(self):
         short_result = {
             "title": "A concise explainer",
-            "targetDurationSeconds": 60,
+            "targetDurationSeconds": 90,
             "scenes": [{
                 "type": "concept",
                 "visualTitle": "Core idea",
@@ -298,7 +430,7 @@ flowchart LR
         with patch.object(shorts_scripts, "sarvam_client", mock_client):
             response = self.post_prepare({
                 "sourceText": "A source document.",
-                "targetDurationSeconds": 60,
+                "targetDurationSeconds": 90,
             })
 
         self.assertEqual(response.status_code, 502)

@@ -78,6 +78,9 @@ test('finds explicit runtime in metadata and prompt phrases', () => {
   assert.equal(extractExplicitDuration(['- **Duration**: 90 seconds']), 90);
   assert.equal(extractExplicitDuration(['Overview: Duration is 1.5 minutes']), 90);
   assert.equal(extractExplicitDuration(['Make this a 2 minute explainer']), 120);
+  assert.equal(extractExplicitDuration(['Shorten the duration to 30 seconds']), 30);
+  assert.equal(extractExplicitDuration(['Reduce this short down to 0.5 minutes']), 30);
+  assert.equal(extractExplicitDuration(['Shorten the explanation']), null);
   assert.equal(extractSceneDurations(sourceDocument), 90);
   assert.deepEqual(extractSceneDurationList(sourceDocument), [5, 20, 35, 30]);
 });
@@ -210,6 +213,98 @@ test('prioritizes an explicit runtime in the user description', async (context) 
   assert.equal(
     prepared.scenes.reduce((total, scene) => total + scene.duration, 0),
     120
+  );
+});
+
+test('honors a shorter target runtime stated as a shortening request', async (context) => {
+  const previousInternalKey = process.env.INTERNAL_API_KEY;
+  process.env.INTERNAL_API_KEY = 'test-internal-key';
+  context.after(() => {
+    if (previousInternalKey === undefined) delete process.env.INTERNAL_API_KEY;
+    else process.env.INTERNAL_API_KEY = previousInternalKey;
+  });
+
+  let requestBody;
+  context.mock.method(global, 'fetch', async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      ...preparedResponse,
+      targetDurationSeconds: 30,
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  });
+
+  const prepared = await parseScript({
+    originalname: 'microservices.md',
+    buffer: Buffer.from(sourceDocument),
+  }, 'Please shorten the duration to 30 seconds.');
+
+  assert.equal(requestBody.targetDurationSeconds, 30);
+  assert.equal(requestBody.requestedSceneDurations, undefined);
+  assert.equal(prepared.targetDurationSeconds, 30);
+});
+
+test('uses the selected runtime over duration metadata and prompt text', async (context) => {
+  const previousInternalKey = process.env.INTERNAL_API_KEY;
+  process.env.INTERNAL_API_KEY = 'test-internal-key';
+  context.after(() => {
+    if (previousInternalKey === undefined) delete process.env.INTERNAL_API_KEY;
+    else process.env.INTERNAL_API_KEY = previousInternalKey;
+  });
+
+  let requestBody;
+  context.mock.method(global, 'fetch', async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      ...preparedResponse,
+      targetDurationSeconds: 45,
+    }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  });
+
+  const prepared = await parseScript({
+    originalname: 'microservices.md',
+    buffer: Buffer.from(sourceDocument),
+  }, 'Create a 90 second video.', { targetDurationSeconds: 45 });
+
+  assert.equal(requestBody.targetDurationSeconds, 45);
+  assert.equal(requestBody.requestedSceneDurations, undefined);
+  assert.equal(requestBody.requestedSceneCount, undefined);
+  assert.equal(prepared.targetDurationSeconds, 45);
+});
+
+test('accepts and uses the 90-second runtime when generation falls back', async (context) => {
+  const previousInternalKey = process.env.INTERNAL_API_KEY;
+  process.env.INTERNAL_API_KEY = 'test-internal-key';
+  context.after(() => {
+    if (previousInternalKey === undefined) delete process.env.INTERNAL_API_KEY;
+    else process.env.INTERNAL_API_KEY = previousInternalKey;
+  });
+
+  let requestBody;
+  context.mock.method(global, 'fetch', async (_url, options) => {
+    requestBody = JSON.parse(options.body);
+    return new Response(JSON.stringify(preparedResponse), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  });
+
+  const prepared = await parseScript({
+    originalname: 'microservices.md',
+    buffer: Buffer.from(sourceDocument),
+  }, '', { targetDurationSeconds: 60 });
+
+  assert.equal(requestBody.targetDurationSeconds, 60);
+  assert.equal(requestBody.requestedSceneCount, undefined);
+  assert.equal(prepared.targetDurationSeconds, 90);
+  assert.equal(
+    prepared.scenes.reduce((total, scene) => total + scene.duration, 0),
+    90
   );
 });
 

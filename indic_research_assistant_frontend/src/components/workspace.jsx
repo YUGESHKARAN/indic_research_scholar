@@ -241,7 +241,7 @@ function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
 
   return (
     <>
-      <div className="hidden h-screen w-[260px] shrink-0 lg:block">
+      <div className="fixed inset-y-0 left-0 hidden w-[260px] overflow-hidden lg:block">
         {content}
       </div>
 
@@ -293,7 +293,7 @@ function WorkspaceShell() {
     <div className="workspace-studio min-h-screen bg-[#0a0f1c] text-slate-100">
       <FontImports />
 
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen lg:pl-[260px]">
         <WorkspaceSidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

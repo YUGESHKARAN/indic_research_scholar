@@ -17,7 +17,7 @@ from utils.config import LLM_MODEL, sarvam_client
 shorts_scripts_bp = Blueprint("shorts_scripts", __name__)
 MAX_PREPARATION_SOURCE_CHARACTERS = 30000
 MAX_USER_DESCRIPTION_CHARACTERS = 2000
-MIN_NARRATION_WORDS_PER_SECOND = 2.5
+MIN_NARRATION_WORDS_PER_SECOND = 1.5
 
 
 @shorts_scripts_bp.route("/api/shorts/scripts/extract", methods=["POST"])
@@ -230,66 +230,75 @@ def prepare_script():
             "error": "requestedSceneDurations must be valid scene timings that sum to targetDurationSeconds."
         }), 400
 
-    runtime_instruction = (
-        f"Use exactly {target_duration} seconds for the complete narration. "
-        f"Include at least {math.ceil(target_duration * MIN_NARRATION_WORDS_PER_SECOND)} "
-        "spoken words across all scenes."
-        if target_duration
-        else "Infer a concise runtime of 30 to 120 seconds from the request."
-    )
-    scene_instruction = (
-        f"Preserve exactly {requested_scene_count} "
-        f"scene{'s' if requested_scene_count != 1 else ''}."
-        if requested_scene_count
-        and (target_duration is None or target_duration >= requested_scene_count)
-        else "Use enough scenes to cover the explanation concisely."
-    )
-    timing_instruction = (
-        "Use these exact scene durations in order: "
-        f"{', '.join(str(duration) for duration in requested_scene_durations)} seconds. "
-        "Give each scene enough distinct spoken explanation to use its allotted time "
-        "naturally; never pad by repeating the same idea."
-        if requested_scene_durations
-        else ""
-    )
     system_prompt = """You are an expert short-form educational video scriptwriter.
-Create a clear, engaging explainer, not a reading of the source document.
-Use the uploaded document as factual reference and the user's description as the
-requested topic, audience, angle, and language. If the source contains a target
-language, use it; otherwise use the language of the user's description, or English.
-Ignore headings, metadata, duration/word-count tables, visual instructions, and
-labels such as "Narration", "English", "Character Count", or "Ready for Shorts".
-Never narrate those labels or read metadata. Use actual narration text in each
-scene, with spoken transitions and concrete explanations of the concepts.
-Each scene must have short on-screen text that summarizes its idea, and a visual
-description that illustrates the explanation rather than displaying the narration.
-Use a diagram only for a real process, architecture, or relationship; diagram scenes
-must include valid Mermaid flowchart code. Keep all spoken narration within the
-requested runtime at a natural pace (about 2.5 spoken words per second; for
-languages without whitespace word boundaries, keep the narration concise).
-Return only JSON with this schema:
-{"title":"...","targetDurationSeconds":90,"scenes":[{"type":"title|concept|diagram","visualTitle":"short headline","visualDescription":"concise on-screen explainer copy and visual direction","narration":"spoken narration only","mermaidCode":"required only for diagram"}]}
-Avoid repeating facts. Do not include markdown fences."""
-    user_content = (
-        f"{runtime_instruction}\n{scene_instruction}\n{timing_instruction}\n\n"
-        f"User description:\n{user_description.strip() or '(not provided)'}\n\n"
-        f"Uploaded source document:\n{source_text.strip()}"
-    )
+    Create a clear, engaging explainer, not a reading of the source document.
+    Use the uploaded document as factual reference and the user's description as the
+    requested topic, audience, angle, and language. If the source contains a target
+    language, use it; otherwise use the language of the user's description, or English.
+    The runtime stated in the runtime instruction is authoritative. Ignore runtime
+    and scene-duration values in the uploaded document or user description.
+    Ignore headings, metadata, duration/word-count tables, visual instructions, and
+    labels such as "Narration", "English", "Character Count", or "Ready for Shorts".
+    Never narrate those labels or read metadata. Use actual narration text in each
+    scene, with spoken transitions and concrete explanations of the concepts.
+    Each scene must have short on-screen text that summarizes its idea, and a visual
+    description that illustrates the explanation rather than displaying the narration.
+    Use a diagram only for a real process, architecture, or relationship; diagram scenes
+    must include valid Mermaid flowchart code. Keep all spoken narration within the
+    requested runtime at a natural pace (about 1.5 spoken words per second; for
+    languages without whitespace word boundaries, keep the narration concise).
+    Return only JSON with this schema:
+    {"title":"...","targetDurationSeconds":90,"scenes":[{"type":"title|concept|diagram","visualTitle":"short headline","visualDescription":"concise on-screen explainer copy and visual direction","narration":"spoken narration only","mermaidCode":"required only for diagram"}]}
+    Avoid repeating facts. Do not include markdown fences."""
+    def build_user_content(duration, minimum_words, scene_durations):
+        runtime_instruction = (
+            f"Use exactly {duration} seconds for the complete narration. "
+            f"Include at least {minimum_words} spoken words across all scenes."
+            if duration
+            else "Infer a concise runtime of 30 to 120 seconds from the request."
+        )
+        scene_instruction = (
+            f"Preserve exactly {requested_scene_count} "
+            f"scene{'s' if requested_scene_count != 1 else ''}."
+            if requested_scene_count
+            and (duration is None or duration >= requested_scene_count)
+            else "Use enough scenes to cover the explanation concisely."
+        )
+        timing_instruction = (
+            "Use these exact scene durations in order: "
+            f"{', '.join(str(value) for value in scene_durations)} seconds. "
+            "Give each scene enough distinct spoken explanation to use its allotted time "
+            "naturally; never pad by repeating the same idea."
+            if scene_durations
+            else ""
+        )
+        return (
+            f"{runtime_instruction}\n{scene_instruction}\n{timing_instruction}\n\n"
+            f"User description:\n{user_description.strip() or '(not provided)'}\n\n"
+            f"Uploaded source document:\n{source_text.strip()}"
+        )
+
     try:
         minimum_word_count = (
             math.ceil(target_duration * MIN_NARRATION_WORDS_PER_SECOND)
             if target_duration is not None
             else None
         )
+        requested_target_duration = target_duration
+        user_content = build_user_content(
+            target_duration,
+            minimum_word_count,
+            requested_scene_durations,
+        )
         result = None
-        for attempt in range(2):
+        for attempt in range(3):
             response = sarvam_client.chat.completions(
                 model=LLM_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_content},
                 ],
-                temperature=0.2,
+                temperature=0.5,
                 reasoning_effort=None,
                 max_tokens=2500,
             )
@@ -300,6 +309,7 @@ Avoid repeating facts. Do not include markdown fences."""
             content = _completion_text(raw_content)
             finish_reason = getattr(choice, "finish_reason", "unknown")
             response_issue = None
+            narration_word_count = None
             if not choices:
                 response_issue = "missing_choices"
             elif not content.strip():
@@ -310,15 +320,14 @@ Avoid repeating facts. Do not include markdown fences."""
                 except (ValueError, TypeError, AttributeError, IndexError) as error:
                     response_issue = str(error)
                 else:
-                    if target_duration is not None:
-                        result["targetDurationSeconds"] = target_duration
-                    word_count = _narration_word_count(result)
+                    narration_word_count = _narration_word_count(result)
                     if (
                         minimum_word_count is not None
-                        and word_count < minimum_word_count
+                        and narration_word_count < minimum_word_count
                     ):
                         response_issue = (
-                            f"narration_too_short:{word_count}/{minimum_word_count}"
+                            f"narration_too_short:"
+                            f"{narration_word_count}/{minimum_word_count}"
                         )
                     else:
                         break
@@ -334,16 +343,41 @@ Avoid repeating facts. Do not include markdown fences."""
                 type(raw_content).__name__,
                 len(content),
             )
+            if attempt == 1 and (
+                response_issue
+                and response_issue.startswith("narration_too_short:")
+                and requested_target_duration is not None
+                and 30 <= requested_target_duration <= 60
+            ):
+                target_duration = 90
+                minimum_word_count = math.ceil(
+                    target_duration * MIN_NARRATION_WORDS_PER_SECOND
+                )
+                requested_scene_durations = None
+                user_content = build_user_content(
+                    target_duration,
+                    minimum_word_count,
+                    requested_scene_durations,
+                )
+                current_app.logger.warning(
+                    "Retrying Shorts narration with the 90-second fallback "
+                    "(requested_seconds=%s, generated_words=%s)",
+                    requested_target_duration,
+                    narration_word_count,
+                )
+                continue
             if attempt == 0:
-                user_content = (
-                    f"{user_content}\n\n"
-                    "Your previous response could not be used. Return one complete, "
-                    "valid JSON object matching the required schema, with every scene "
-                    "field populated. Do not use markdown fences or add commentary. "
-                    + (
-                        f"Include at least {minimum_word_count} spoken words total."
-                        if minimum_word_count is not None
-                        else "Keep the explanation concise and complete."
+                narration_retry_instruction = (
+                    "The narration has "
+                    f"{narration_word_count} spoken words, but needs at least "
+                    f"{minimum_word_count}. Expand the existing scene narration "
+                    "with useful explanations, not repetition."
+                    if response_issue
+                    and response_issue.startswith("narration_too_short:")
+                    else (
+                        "Your previous response could not be used. Return one complete, "
+                        "valid JSON object matching the required schema, with every scene "
+                        "field populated. Do not use markdown fences or add commentary."
                     )
                 )
             else:
@@ -356,8 +390,8 @@ Avoid repeating facts. Do not include markdown fences."""
                 if response_issue.startswith("narration_too_short:"):
                     return jsonify({
                         "error": (
-                            "Sarvam could not generate enough narration for the "
-                            "requested runtime. Please retry or shorten the target duration."
+                            "Sarvam could not generate enough narration after retrying "
+                            "with the 90-second maximum. Please try another script."
                         )
                     }), 502
                 return jsonify({
@@ -366,6 +400,16 @@ Avoid repeating facts. Do not include markdown fences."""
                         "Please try again."
                     )
                 }), 502
+            user_content = (
+                f"{user_content}\n\n{narration_retry_instruction} "
+                + (
+                    f"Include at least {minimum_word_count} spoken words total."
+                    if minimum_word_count is not None
+                    else "Keep the explanation concise and complete."
+                )
+            )
+
+        result["targetDurationSeconds"] = target_duration
         current_app.logger.info(
             "Prepared Shorts scenes "
             "(response_id=%s, target_seconds=%s, scene_count=%d, "
