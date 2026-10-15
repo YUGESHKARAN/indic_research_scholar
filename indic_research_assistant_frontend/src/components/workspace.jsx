@@ -22,10 +22,10 @@ import WorkspaceShorts from '../pages/WorkspaceShorts';
 const navItems = [
   { id: 'overview', label: 'Overview', icon: FiBookOpen, to: '/workspace' },
   { id: 'qa', label: 'Q&A Studio', icon: FiZap, to: '/workspace/qa' },
-  { id: 'documents', label: 'Documents', icon: FiFileText, to: '/workspace/documents' },
+  // { id: 'documents', label: 'Documents', icon: FiFileText, to: '/workspace/documents' },
   { id: 'shorts', label: 'Shorts Studio', icon: FiVideo, to: '/workspace/shorts' },
-  { id: 'presentation', label: 'Presentation', icon: FiFileText, to: '/workspace/presentation' },
-  { id: 'settings', label: 'Settings', icon: FiSettings, to: '/workspace/settings' },
+  // { id: 'presentation', label: 'Presentation', icon: FiFileText, to: '/workspace/presentation' },
+  // { id: 'settings', label: 'Settings', icon: FiSettings, to: '/workspace/settings' },
 ];
 
 function QATaskControls({ controls, onUpload }) {
@@ -148,7 +148,9 @@ function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
   const content = (
     <div className="flex h-full flex-col bg-[#0f172a]/95 text-slate-100 backdrop-blur-xl">
       <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-        <div className="flex items-center gap-3">
+        <Link 
+        to={'/'}
+        className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#f6c76e] text-sm font-semibold text-slate-900">
             अ
           </div>
@@ -158,7 +160,7 @@ function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
             </p>
             <p className="mt-0.5 text-sm font-semibold text-white">Indic Scholar</p>
           </div>
-        </div>
+        </Link>
 
         <button
           type="button"
@@ -241,7 +243,7 @@ function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
 
   return (
     <>
-      <div className="hidden h-screen w-[260px] shrink-0 lg:block">
+      <div className="fixed inset-y-0 left-0 hidden w-[260px] overflow-hidden lg:block">
         {content}
       </div>
 
@@ -293,7 +295,7 @@ function WorkspaceShell() {
     <div className="workspace-studio min-h-screen bg-[#0a0f1c] text-slate-100">
       <FontImports />
 
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen lg:pl-[260px]">
         <WorkspaceSidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}

@@ -27,6 +27,13 @@ const STEPS = [
     cta: 'Ask a document',
     to: '/ask',
   },
+  {
+    number: '03',
+    title: 'Turn ideas into Shorts',
+    body: 'Create short videos with a chosen narration language and speaker. Review and edit the translated narration for each scene before rendering.',
+    cta: 'Create a Short',
+    to: '/workspace/shorts',
+  },
 ]
 
 const FEATURES = [
@@ -41,6 +48,10 @@ const FEATURES = [
   {
     title: '11+ Indian languages',
     body: 'Ask and read in Hindi, Tamil, Telugu, Kannada, Malayalam, Bengali, Marathi, Gujarati, Punjabi, Odia, or English.',
+  },
+  {
+    title: 'Shorts with editable narration',
+    body: 'Translate scene narration into your selected language, refine the wording, and choose the voice before generating your video.',
   },
 ]
 
@@ -116,13 +127,10 @@ function Landing() {
             How it works
           </p>
           <h2 className="font-display text-xl md:text-4xl font-semibold mb-14">
-            Two steps. Any paper. Any language.
+            From research to answers—and shareable Shorts.
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-8 relative">
-            <div className="hidden md:block absolute left-1/2 top-10 -translate-x-1/2 text-[#2A2A3D] text-3xl">
-              →
-            </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {STEPS.map((step) => (
               <div
                 key={step.number}
@@ -132,7 +140,7 @@ function Landing() {
                 <h3 className="font-display text-xl md:text-2xl font-semibold mb-3">{step.title}</h3>
                 <p className="text-[#F1EEE4]/60 leading-relaxed mb-3 md:mb-6 flex-1">{step.body}</p>
                 <Link
-                  to={step.to === '/ingest' ? '/workspace' : '/workspace/qa'}
+                  to={step.to === '/ingest' ? '/workspace' : step.to}
                   className="font-body text-xs md:text-sm font-medium text-[#E8A33D] hover:text-[#f0b158]
                              inline-flex items-center gap-1 transition-colors"
                 >
@@ -146,7 +154,7 @@ function Landing() {
 
         {/* Features */}
         <section className="max-w-6xl overflow-x-hidden mx-auto px-6 pb-10 pt-5 md:py-20">
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           {FEATURES.map((f) => (
             <div key={f.title} className="border-t border-[#2A2A3D] pt-6">
               <h3 className="font-display text-lg font-semibold mb-2">{f.title}</h3>

@@ -38,9 +38,49 @@ TTS_VOICES = {
     "marathi": ("bulbul:v4-flash", "mrunal_mr_narration"),
     "gujarati": ("bulbul:v4-flash", "bhavik_gu_conversation"),
 }
+TTS_SPEAKER_OPTIONS = {
+    "english": {
+        "girish_en_documentary",
+        "shubh_en_narration",
+        "simran_en_narration",
+    },
+    "hindi": {
+        "simran_hi_narration",
+        "anand_hi_documentary",
+        "roopa_hi_narration",
+    },
+    "tamil": {"gokul_ta_narration", "vijay_ta_narration"},
+    "telugu": {
+        "kavitha_te_narration",
+        "pooja_te_conversation",
+        "tarun_te_narration",
+    },
+    "kannada": {
+        "chaitra_kn_narration",
+        "chetan_kn_conversation",
+        "suchitra_kn_narration",
+    },
+    "malayalam": {"shubh", "aditya", "ritu", "priya"},
+    "bengali": {
+        "roopa_bn_conversational",
+        "arnab_bn_conversation",
+        "bimal_bn_suspense",
+    },
+    "marathi": {
+        "mrunal_mr_narration",
+        "neha_mr_narration",
+        "soham_mr_narration",
+    },
+    "gujarati": {
+        "bhavik_gu_conversation",
+        "pooja_gu_conversational",
+        "pooja_gu_customer",
+    },
+}
 MIN_SCRIPT_CHARACTERS = 10
 MAX_SCRIPT_CHARACTERS = 3500
 MAX_TTS_REQUEST_CHARACTERS = 2500
+MAX_TRANSLATION_REQUEST_CHARACTERS = 1000
 MAX_AUDIO_DURATION_SECONDS = 300
 
 
@@ -73,16 +113,19 @@ def _decode_wav(encoded_audio: str) -> tuple[bytes, float]:
     return audio_bytes, duration
 
 
-def _split_tts_script(script: str) -> list[str]:
+def _split_script(script: str, max_characters: int) -> list[str]:
     chunks = []
     remaining = script
-    while len(remaining) > MAX_TTS_REQUEST_CHARACTERS:
-        limit = MAX_TTS_REQUEST_CHARACTERS
+    while len(remaining) > max_characters:
+        limit = max_characters
         lower_bound = limit // 2
         paragraph_end = remaining.rfind("\n\n", lower_bound, limit + 1)
         sentence_ends = [
             match.end()
-            for match in re.finditer(r"""[.!?]["')\]]?(?=\s)""", remaining[:limit])
+            for match in re.finditer(
+                r"""[.!?।]["')\]]?(?=\s)""",
+                remaining[:limit],
+            )
             if match.end() >= lower_bound
         ]
         split_at = paragraph_end if paragraph_end >= lower_bound else 0
@@ -101,6 +144,87 @@ def _split_tts_script(script: str) -> list[str]:
     if remaining:
         chunks.append(remaining)
     return chunks
+
+
+def _split_tts_script(script: str) -> list[str]:
+    return _split_script(script, MAX_TTS_REQUEST_CHARACTERS)
+
+
+def _split_translation_script(script: str) -> list[str]:
+    return _split_script(script, MAX_TRANSLATION_REQUEST_CHARACTERS)
+
+
+def _translate_script(script: str, source_language: str, target_language: str) -> str:
+    translated_chunks = []
+    for text_chunk in _split_translation_script(script):
+        response = sarvam_client.text.translate(
+            input=text_chunk,
+            source_language_code=LANGUAGE_CODES[source_language],
+            target_language_code=LANGUAGE_CODES[target_language],
+            model="mayura:v1",
+            mode="modern-colloquial",
+        )
+        translated_text = getattr(response, "translated_text", None)
+        if not isinstance(translated_text, str) or not translated_text.strip():
+            raise ValueError("Sarvam returned an empty Shorts narration translation.")
+        translated_chunks.append(translated_text.strip())
+    return "\n\n".join(translated_chunks)
+
+
+@shorts_audio_bp.route("/api/shorts/scripts/translate", methods=["POST"])
+def translate_shorts_narration():
+    if not INTERNAL_API_KEY:
+        current_app.logger.error("INTERNAL_API_KEY is not configured")
+        return jsonify({"error": "Shorts translation is unavailable"}), 503
+
+    supplied_key = request.headers.get("x-internal-key", "")
+    if not hmac.compare_digest(supplied_key, INTERNAL_API_KEY):
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "A JSON request body is required."}), 400
+
+    source_language = data.get("sourceLanguage")
+    target_language = data.get("targetLanguage")
+    texts = data.get("texts")
+    if (
+        not isinstance(source_language, str)
+        or source_language not in LANGUAGE_CODES
+        or not isinstance(target_language, str)
+        or target_language not in LANGUAGE_CODES
+        or not isinstance(texts, list)
+        or not texts
+        or len(texts) > 20
+        or any(
+            not isinstance(text, str)
+            or not text.strip()
+            or len(text) > MAX_SCRIPT_CHARACTERS
+            for text in texts
+        )
+    ):
+        return jsonify({"error": "Invalid Shorts narration translation request."}), 400
+
+    if source_language == target_language:
+        return jsonify({"translations": [text.strip() for text in texts]}), 200
+
+    try:
+        translations = [
+            _translate_script(text.strip(), source_language, target_language)
+            for text in texts
+        ]
+    except Exception:
+        current_app.logger.exception(
+            "Shorts narration translation failed "
+            "(source_language=%s, target_language=%s)",
+            source_language,
+            target_language,
+        )
+        return jsonify({
+            "error": f"Sarvam could not translate Shorts narration to {target_language}."
+        }), 502
+
+    return jsonify({"translations": translations}), 200
 
 
 def _combine_wav_chunks(audio_chunks: list[bytes]) -> tuple[bytes, float]:
@@ -197,6 +321,19 @@ def generate_shorts_audio():
     if not isinstance(language, str) or language not in LANGUAGE_CODES:
         return jsonify({"error": "Unsupported Shorts audio language."}), 400
 
+    source_language = data.get("sourceLanguage")
+    if not isinstance(source_language, str) or source_language not in LANGUAGE_CODES:
+        return jsonify({"error": "Unsupported Shorts source narration language."}), 400
+
+    speaker = data.get("speaker")
+    if speaker is None:
+        speaker = TTS_VOICES[language][1]
+    elif (
+        not isinstance(speaker, str)
+        or speaker not in TTS_SPEAKER_OPTIONS[language]
+    ):
+        return jsonify({"error": "Unsupported Shorts speaker for the selected language."}), 400
+
     supplied_short_id = data.get("shortId")
     if not isinstance(supplied_short_id, str):
         return jsonify({"error": "shortId must be a UUID."}), 400
@@ -205,10 +342,25 @@ def generate_shorts_audio():
     except (ValueError, AttributeError):
         return jsonify({"error": "shortId must be a UUID."}), 400
 
+    synthesis_script = script
+    if source_language != language:
+        try:
+            synthesis_script = _translate_script(script, source_language, language)
+        except Exception:
+            current_app.logger.exception(
+                "Sarvam Shorts narration translation failed "
+                "(source_language=%s, target_language=%s)",
+                source_language,
+                language,
+            )
+            return jsonify({
+                "error": f"Sarvam could not translate Shorts narration to {language}."
+            }), 502
+
     audio_chunks = []
-    model, speaker = TTS_VOICES[language]
+    model = TTS_VOICES[language][0]
     try:
-        for text_chunk in _split_tts_script(script):
+        for text_chunk in _split_tts_script(synthesis_script):
             response = sarvam_client.text_to_speech.convert(
                 text=text_chunk,
                 language_code=LANGUAGE_CODES[language],
@@ -248,12 +400,15 @@ def generate_shorts_audio():
             }), 413
         if getattr(error, "status_code", None) == 400:
             current_app.logger.warning(
-                "Sarvam rejected Shorts TTS request for language %s using %s",
+                "Sarvam rejected Shorts TTS request for language %s using speaker %s",
                 language,
                 speaker,
             )
             return jsonify({
-                "error": f"Sarvam rejected the {language} voice configuration. Please retry or select another language."
+                "error": (
+                    f"Sarvam rejected the {language} speaker. "
+                    "Please select another voice or language."
+                )
             }), 502
         current_app.logger.exception("Sarvam Shorts TTS request failed")
         return jsonify({"error": "Sarvam could not generate Shorts audio."}), 502
@@ -267,6 +422,8 @@ def generate_shorts_audio():
     return jsonify({
         "success": True,
         "audioFile": audio_file,
+        "sourceLanguage": source_language,
         "language": language,
+        "speaker": speaker,
         "duration": duration,
     }), 200

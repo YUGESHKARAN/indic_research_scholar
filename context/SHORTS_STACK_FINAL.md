@@ -70,7 +70,8 @@ Generate scenes from uploaded script
 Request Body:
 {
   "scriptFile": File (Markdown/PDF/DOCX),    // multipart/form-data; legacy DOC is unsupported in v1
-  "userPrompt": string,                      // Optional scene hints
+  "userPrompt": string,                      // Optional topic, audience, and language hints
+  "targetDurationSeconds": number,           // Required; 30–60 seconds, overrides document duration metadata
   "language": string,                        // hindi, tamil, telugu, etc.
   "platform": string,                        // "youtube" | "reels" | "tiktok"
   "resolution": string                       // "720p" | "1080p" | "mobile"
@@ -93,21 +94,28 @@ Response:
     }
   ],
   "totalDuration": number,
+  "targetDurationSeconds": number,           // Final duration; may be 90 after the narration fallback
+  "requestedTargetDurationSeconds": number,
   "platform": string,
   "resolution": string
 }
 ```
 
+The user chooses the authoritative 30–60 second target in the creator. If narration remains too short after a retry at that duration, script preparation may make one final attempt at 90 seconds; the response and scene durations report that fallback.
+
 #### **PATCH /api/shorts/:shortId/scenes**
-Update scene configuration (user edits)
+Update scene configuration before rendering
 ```javascript
 Request Body:
 {
   "scenes": [
     {
       "id": number,
-      "duration": number,                    // User can modify timing
-      "visual": { ... }                      // User can swap visuals
+      "duration": number,                    // Editable scene timing
+      "narration": string,                   // Original/source spoken narration
+      "narrationTranslations": {              // Editable target-language text by language
+        "tamil": string
+      }
     }
   ]
 }
@@ -116,12 +124,27 @@ Response:
 { "success": true, "shortId": string }
 ```
 
+Edited narration is trimmed and saved before rendering. Empty narration is rejected, and the combined narration for each language across all scenes is limited to 3,500 characters. Changing source or translated narration invalidates saved language audio and rendered video. Source narration edits clear stale translations.
+
+#### **POST /api/shorts/:shortId/translate/:language**
+Translate source narration for the scene editor and return one editable narration per scene.
+```javascript
+Response:
+{
+  "language": string,
+  "scenes": [{ "id": number, "narration": string }]
+}
+```
+
+Translations are stored per scene and language while the original `narration` remains unchanged. Editing translated narration persists it in `narrationTranslations`; rendering uses a complete saved translation directly, avoiding a second translation pass.
+
 #### **POST /api/shorts/:shortId/render**
-Generate or reuse the selected language WAV, then render a synchronized MP4 with that narration embedded
+Synthesize or reuse the selected language WAV, then render a synchronized MP4 with the selected-language narration embedded. If a complete editor translation is not stored, the audio service translates the source narration before synthesis.
 ```javascript
 Request Body:
 {
   "language": string,                        // Target language
+  "speaker": string,                         // Optional Sarvam speaker ID for the selected language
   "platform": string,                        // Output format
   "resolution": string
 }
@@ -132,14 +155,15 @@ Response:
   "videoUrl": string,                        // Download path
   "duration": number,
   "audioFile": string,                       // Source WAV retained for this language
-  "audioDuration": number
+  "audioDuration": number,
+  "speaker": string                          // Selected voice; remembered with the language track
 }
 ```
 
-Scene timings are proportionally extended or shortened to match the selected narration, up to five minutes. Each language has its own rendered MP4; selecting another language renders or reuses the matching voice and synchronized video.
+Scene timings are proportionally extended or shortened to match the selected narration, up to five minutes. Each language has its own rendered MP4; selecting another language displays its saved or newly translated narration, then renders or reuses the selected speaker's synchronized voice and video. Speaker choice is remembered per language on the Short; selecting a different speaker regenerates that language's WAV.
 
 #### **POST /api/shorts/:shortId/audio/:language**
-Generate or reuse one language WAV without rendering a video. The workspace uses the render endpoint when a language is selected so preview and download share the same embedded track.
+Translate the narration from the Short's `narrationLanguage` to the requested language and generate or reuse that language WAV without rendering a video. The workspace uses the render endpoint when a language is selected so preview and download share the same embedded track.
 
 #### **GET /api/shorts/:shortId/audio/:language**
 Fetch audio for specific language
@@ -401,7 +425,8 @@ const shortSchema = new Schema({
   
   // Audio files (per language)
   audioFiles: [{
-    language: String,  // hindi, tamil, telugu, etc.
+    language: String,  // Target narration language
+    sourceLanguage: String,
     file: String,
     duration: Number
   }],

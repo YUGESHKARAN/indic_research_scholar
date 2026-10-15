@@ -21,6 +21,7 @@ const LANGUAGES = new Set(
   Short.schema.path('audioFiles').schema.path('language').enumValues
 );
 const MAX_VIDEO_DURATION_SECONDS = 300;
+const MAX_NARRATION_CHARACTERS = 3500;
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SCRIPT_BYTES, fields: 8, parts: 10, fieldSize: 4096 },
@@ -81,7 +82,13 @@ function isWithinDirectory(directory, filePath) {
   return filePath.startsWith(`${directory}${path.sep}`);
 }
 
-async function requestShortsAudio(script, shortId, language) {
+async function requestShortsAudio(
+  script,
+  shortId,
+  sourceLanguage,
+  language,
+  speaker
+) {
   const internalKey = process.env.INTERNAL_API_KEY;
   if (!internalKey) {
     const error = new Error('Shorts audio generation is not configured.');
@@ -109,7 +116,7 @@ async function requestShortsAudio(script, shortId, language) {
         'content-type': 'application/json',
         'x-internal-key': internalKey,
       },
-      body: JSON.stringify({ script, shortId, language }),
+      body: JSON.stringify({ script, shortId, sourceLanguage, language, speaker }),
       signal: AbortSignal.timeout(90_000),
     });
   } catch (error) {
@@ -152,7 +159,11 @@ async function requestShortsAudio(script, shortId, language) {
   if (
     payload.success !== true ||
     payload.audioFile !== expectedAudioFile ||
+    payload.sourceLanguage !== sourceLanguage ||
     payload.language !== language ||
+    typeof payload.speaker !== 'string' ||
+    !payload.speaker ||
+    (speaker !== undefined && payload.speaker !== speaker) ||
     !Number.isFinite(payload.duration) ||
     payload.duration <= 0 ||
     payload.duration > 300
@@ -164,7 +175,109 @@ async function requestShortsAudio(script, shortId, language) {
   return payload;
 }
 
-async function ensureShortAudio(shortDocument, shortId, language) {
+async function requestShortsTranslations(texts, sourceLanguage, targetLanguage) {
+  const internalKey = process.env.INTERNAL_API_KEY;
+  if (!internalKey) {
+    const error = new Error('Shorts translation is not configured.');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  let endpoint;
+  try {
+    endpoint = new URL(
+      '/api/shorts/scripts/translate',
+      process.env.FLASK_SERVICE_URL || 'http://localhost:5000'
+    );
+  } catch (error) {
+    const serviceError = new Error('The Flask service URL is invalid.', { cause: error });
+    serviceError.statusCode = 500;
+    throw serviceError;
+  }
+
+  let response;
+  try {
+    response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-internal-key': internalKey,
+      },
+      body: JSON.stringify({ texts, sourceLanguage, targetLanguage }),
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (error) {
+    const serviceError = new Error('Unable to reach the Shorts translation service.', {
+      cause: error,
+    });
+    serviceError.statusCode = 502;
+    throw serviceError;
+  }
+
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    const serviceError = new Error('The Shorts translation service returned an invalid response.', {
+      cause: error,
+    });
+    serviceError.statusCode = 502;
+    throw serviceError;
+  }
+  if (!response.ok) {
+    const serviceError = new Error(
+      typeof payload?.error === 'string'
+        ? payload.error
+        : 'Shorts narration translation failed.'
+    );
+    serviceError.statusCode = response.status >= 400 && response.status < 600
+      ? response.status
+      : 502;
+    throw serviceError;
+  }
+  if (
+    !Array.isArray(payload?.translations) ||
+    payload.translations.length !== texts.length ||
+    payload.translations.some(
+      (translation) => typeof translation !== 'string' || !translation.trim()
+    )
+  ) {
+    const serviceError = new Error('The Shorts translation service returned invalid translations.');
+    serviceError.statusCode = 502;
+    throw serviceError;
+  }
+  return payload.translations.map((translation) => translation.trim());
+}
+
+function getNarrationTranslation(scene, language) {
+  if (scene.narrationTranslations instanceof Map) {
+    return scene.narrationTranslations.get(language);
+  }
+  return scene.narrationTranslations?.[language];
+}
+
+function getNarrationTranslations(scene) {
+  if (scene.narrationTranslations instanceof Map) {
+    return Object.fromEntries(scene.narrationTranslations);
+  }
+  return { ...(scene.narrationTranslations || {}) };
+}
+
+async function ensureShortAudio(shortDocument, shortId, language, speaker) {
+  const originalLanguage = shortDocument.narrationLanguage || 'hindi';
+  const hasTranslation = language !== originalLanguage &&
+    shortDocument.scenes.length > 0 &&
+    shortDocument.scenes.every(
+      (scene) => getNarrationTranslation(scene, language)
+    );
+  const sourceLanguage = hasTranslation ? language : originalLanguage;
+  if (!LANGUAGES.has(sourceLanguage)) {
+    throw new Error('Shorts narration language is not supported for translation.');
+  }
+  const existingAudio = shortDocument.audioFiles.find(
+    (item) => item.language === language
+  );
+  const selectedSpeaker = speaker || existingAudio?.speaker;
   const expectedAudioFile = `audio/${shortId}_${language}.wav`;
   const storageRoot = getStorageRoot();
   const audioPath = path.resolve(storageRoot, expectedAudioFile);
@@ -172,25 +285,33 @@ async function ensureShortAudio(shortDocument, shortId, language) {
     throw new Error('Resolved Shorts audio path is outside the storage directory.');
   }
 
-  const existingAudio = shortDocument.audioFiles.find(
-    (item) => item.language === language && item.file === expectedAudioFile
+  const cacheableAudio = shortDocument.audioFiles.find(
+    (item) =>
+      item.language === language &&
+      item.file === expectedAudioFile &&
+      selectedSpeaker &&
+      item.speaker === selectedSpeaker &&
+      (item.sourceLanguage === sourceLanguage ||
+        (!item.sourceLanguage && sourceLanguage === language))
   );
-  if (existingAudio) {
+  if (cacheableAudio) {
     try {
       const audioStats = await fs.stat(audioPath);
       if (audioStats.isFile()) {
         console.info('[shorts:audio-cache]', JSON.stringify({
           shortId,
+          sourceLanguage,
           language,
           cacheHit: true,
-          audioDurationSeconds: existingAudio.duration,
+          speaker: cacheableAudio.speaker,
+          audioDurationSeconds: cacheableAudio.duration,
           sceneDurationSeconds: shortDocument.scenes.reduce(
             (total, scene) => total + scene.duration,
             0
           ),
           sceneDurationsSeconds: shortDocument.scenes.map((scene) => scene.duration),
         }));
-        return existingAudio;
+        return cacheableAudio;
       }
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
@@ -198,12 +319,24 @@ async function ensureShortAudio(shortDocument, shortId, language) {
   }
 
   const script = shortDocument.scenes
-    .map((scene) => scene.narration || scene.content)
+    .map((scene) => (
+      hasTranslation
+        ? getNarrationTranslation(scene, language)
+        : scene.narration || scene.content
+    ))
     .join('\n\n')
     .trim();
-  const audioResult = await requestShortsAudio(script, shortId, language);
+  const audioResult = await requestShortsAudio(
+    script,
+    shortId,
+    sourceLanguage,
+    language,
+    selectedSpeaker
+  );
   console.info('[shorts:audio-generated]', JSON.stringify({
     shortId,
+    sourceLanguage,
+    speaker: audioResult.speaker,
     language,
     cacheHit: false,
     narrationCharacterCount: script.length,
@@ -222,6 +355,8 @@ async function ensureShortAudio(shortDocument, shortId, language) {
 
   const audioFile = {
     language,
+    sourceLanguage,
+    speaker: audioResult.speaker,
     file: audioResult.audioFile,
     duration: audioResult.duration,
   };
@@ -315,11 +450,24 @@ router.post('/create', authenticate, handleScriptUpload, async (req, res) => {
     res.status(400).json({ error: 'Additional context must be text.' });
     return;
   }
+  const targetDurationSeconds = Number(req.body.targetDurationSeconds);
+  if (
+    !Number.isInteger(targetDurationSeconds) ||
+    targetDurationSeconds < 30 ||
+    targetDurationSeconds > 60
+  ) {
+    res.status(400).json({
+      error: 'Choose a target runtime between 30 and 60 seconds.',
+    });
+    return;
+  }
 
   let generatedScenes = [];
   let shortDocument;
   try {
-    const preparedScript = await parseScript(req.file, userPrompt);
+    const preparedScript = await parseScript(req.file, userPrompt, {
+      targetDurationSeconds,
+    });
     const parsedScenes = preparedScript.scenes;
     const title = preparedScript.title
       || parsedScenes.find((scene) => scene.type === 'title')?.content
@@ -351,8 +499,13 @@ router.post('/create', authenticate, handleScriptUpload, async (req, res) => {
       shortId: shortDocument.shortId,
       title: shortDocument.title,
       narrationLanguage: shortDocument.narrationLanguage,
-      scenes: shortDocument.scenes,
+      scenes: shortDocument.scenes.map((scene) => ({
+        ...scene,
+        narrationTranslations: getNarrationTranslations(scene),
+      })),
       totalDuration: shortDocument.duration,
+      targetDurationSeconds: preparedScript.targetDurationSeconds,
+      requestedTargetDurationSeconds: targetDurationSeconds,
       platform: shortDocument.platform,
       resolution: shortDocument.resolution,
     });
@@ -370,6 +523,93 @@ router.post('/create', authenticate, handleScriptUpload, async (req, res) => {
     }
     console.error('Short creation failed:', error);
     res.status(500).json({ error: 'Failed to create short.' });
+  }
+});
+
+router.post('/:shortId/translate/:language', authenticate, async (req, res) => {
+  const { shortId, language } = req.params;
+  if (!isValidShortId(shortId)) {
+    res.status(400).json({ error: 'Invalid short ID.' });
+    return;
+  }
+  if (!mongoose.Types.ObjectId.isValid(req.user?.id)) {
+    res.status(401).json({ error: 'Not authenticated' });
+    return;
+  }
+  if (!LANGUAGES.has(language)) {
+    res.status(400).json({ error: 'Unsupported Shorts narration language.' });
+    return;
+  }
+
+  try {
+    const shortDocument = await Short.findOne({
+      shortId,
+      userId: req.user.id,
+    });
+    if (!shortDocument) {
+      res.status(404).json({ error: 'Short not found.' });
+      return;
+    }
+
+    const sourceLanguage = shortDocument.narrationLanguage || 'hindi';
+    if (!LANGUAGES.has(sourceLanguage)) {
+      res.status(400).json({ error: 'Unsupported source narration language.' });
+      return;
+    }
+
+    const scenesNeedingTranslation = sourceLanguage === language
+      ? []
+      : shortDocument.scenes.filter(
+        (scene) => !getNarrationTranslation(scene, language)
+      );
+    if (scenesNeedingTranslation.length > 0) {
+      const sourceTexts = scenesNeedingTranslation.map(
+        (scene) => scene.narration || scene.content
+      );
+      if (sourceTexts.some((text) => typeof text !== 'string' || !text.trim())) {
+        res.status(400).json({
+          error: 'Every scene needs narration before translation.',
+        });
+        return;
+      }
+      const translations = await requestShortsTranslations(
+        sourceTexts,
+        sourceLanguage,
+        language
+      );
+      scenesNeedingTranslation.forEach((scene, index) => {
+        const narrationTranslations = getNarrationTranslations(scene);
+        narrationTranslations[language] = translations[index];
+        scene.narrationTranslations = narrationTranslations;
+      });
+      shortDocument.audioFiles = shortDocument.audioFiles.filter(
+        (audio) => audio.language !== language
+      );
+      if (shortDocument.videoLanguage === language) {
+        shortDocument.videoFile = undefined;
+        shortDocument.videoUrl = undefined;
+        shortDocument.videoLanguage = undefined;
+        shortDocument.status = 'draft';
+      }
+      await shortDocument.save();
+    }
+
+    res.json({
+      language,
+      scenes: shortDocument.scenes.map((scene) => ({
+        id: scene.id,
+        narration: language === sourceLanguage
+          ? scene.narration || scene.content
+          : getNarrationTranslation(scene, language) || scene.narration || scene.content,
+      })),
+    });
+  } catch (error) {
+    if (Number.isInteger(error.statusCode)) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    console.error('Short narration translation failed:', error);
+    res.status(500).json({ error: 'Failed to translate the narration.' });
   }
 });
 
@@ -437,6 +677,36 @@ router.patch('/:shortId/scenes', authenticate, async (req, res) => {
         return;
       }
       if (
+        requestedScene.narration !== undefined &&
+        (typeof requestedScene.narration !== 'string' ||
+          !requestedScene.narration.trim() ||
+          requestedScene.narration.length > MAX_NARRATION_CHARACTERS)
+      ) {
+        res.status(400).json({
+          error: `Scene ${index + 1} narration must contain 1 to ${MAX_NARRATION_CHARACTERS} characters.`,
+        });
+        return;
+      }
+      const requestedTranslations = requestedScene.narrationTranslations;
+      if (
+        requestedTranslations !== undefined &&
+        (!requestedTranslations ||
+          typeof requestedTranslations !== 'object' ||
+          Array.isArray(requestedTranslations) ||
+          Object.entries(requestedTranslations).some(
+            ([language, narration]) =>
+              !LANGUAGES.has(language) ||
+              typeof narration !== 'string' ||
+              !narration.trim() ||
+              narration.length > MAX_NARRATION_CHARACTERS
+          ))
+      ) {
+        res.status(400).json({
+          error: `Scene ${index + 1} has invalid translated narration.`,
+        });
+        return;
+      }
+      if (
         requestedScene.visual &&
         (requestedScene.visual.type !== existingScene.visual.type ||
           requestedScene.visual.imagePath !== existingScene.visual.imagePath)
@@ -445,7 +715,37 @@ router.patch('/:shortId/scenes', authenticate, async (req, res) => {
         return;
       }
       totalDuration += requestedScene.duration;
-      orderedScenes.push({ scene: existingScene, duration: requestedScene.duration });
+      orderedScenes.push({
+        scene: existingScene,
+        duration: requestedScene.duration,
+        narration: requestedScene.narration === undefined
+          ? existingScene.narration
+          : requestedScene.narration.trim(),
+        narrationTranslations: {
+          ...(requestedScene.narration !== undefined
+            ? {}
+            : getNarrationTranslations(existingScene)),
+          ...(requestedTranslations || {}),
+        },
+      });
+    }
+
+    for (const language of LANGUAGES) {
+      const narrationCharacterCount = orderedScenes
+        .map(({ narration, narrationTranslations, scene }) => (
+          language === shortDocument.narrationLanguage
+            ? narration
+            : narrationTranslations[language] || ''
+        ))
+        .filter(Boolean)
+        .join('\n\n')
+        .length;
+      if (narrationCharacterCount > MAX_NARRATION_CHARACTERS) {
+        res.status(400).json({
+          error: `Short narration in ${language} cannot exceed ${MAX_NARRATION_CHARACTERS} characters.`,
+        });
+        return;
+      }
     }
 
     if (totalDuration > MAX_VIDEO_DURATION_SECONDS) {
@@ -459,14 +759,28 @@ router.patch('/:shortId/scenes', authenticate, async (req, res) => {
       ({ scene }, index) => scene.sequenceNumber !== index + 1
     );
     const changed = orderedScenes.some(
-      ({ scene, duration }, index) =>
-        scene.sequenceNumber !== index + 1 || scene.duration !== duration
+      ({ scene, duration, narration, narrationTranslations }, index) =>
+        scene.sequenceNumber !== index + 1 ||
+        scene.duration !== duration ||
+        scene.narration !== narration ||
+        JSON.stringify(getNarrationTranslations(scene)) !==
+          JSON.stringify(narrationTranslations)
     );
-    shortDocument.scenes = orderedScenes.map(({ scene, duration }, index) => {
-      scene.sequenceNumber = index + 1;
-      scene.duration = duration;
-      return scene;
-    }    );
+    const narrationChanged = orderedScenes.some(
+      ({ scene, narration, narrationTranslations }) =>
+        scene.narration !== narration ||
+        JSON.stringify(getNarrationTranslations(scene)) !==
+          JSON.stringify(narrationTranslations)
+    );
+    shortDocument.scenes = orderedScenes.map(
+      ({ scene, duration, narration, narrationTranslations }, index) => {
+        scene.sequenceNumber = index + 1;
+        scene.duration = duration;
+        scene.narration = narration;
+        scene.narrationTranslations = narrationTranslations;
+        return scene;
+      }
+    );
     shortDocument.duration = totalDuration;
     if (changed) {
       shortDocument.videoFile = undefined;
@@ -477,7 +791,7 @@ router.patch('/:shortId/scenes', authenticate, async (req, res) => {
         audioFile.videoFile = undefined;
       });
     }
-    if (orderChanged) {
+    if (orderChanged || narrationChanged) {
       shortDocument.audioFiles = [];
     }
     await shortDocument.save();
@@ -548,6 +862,7 @@ router.get('/:shortId', authenticate, async (req, res) => {
       scenes: shortDocument.scenes,
       audioFiles: shortDocument.audioFiles.map((audioFile) => ({
         language: audioFile.language,
+        speaker: audioFile.speaker,
         file: audioFile.file,
         duration: audioFile.duration,
       })),
@@ -617,6 +932,14 @@ router.post('/:shortId/audio/:language', authenticate, async (req, res) => {
     res.status(400).json({ error: 'Unsupported Shorts audio language.' });
     return;
   }
+  const requestBody = req.body || {};
+  if (
+    requestBody.speaker !== undefined &&
+    (typeof requestBody.speaker !== 'string' || !requestBody.speaker.trim())
+  ) {
+    res.status(400).json({ error: 'Speaker must be a non-empty text value.' });
+    return;
+  }
 
   try {
     const shortDocument = await Short.findOne({
@@ -632,11 +955,17 @@ router.post('/:shortId/audio/:language', authenticate, async (req, res) => {
       return;
     }
 
-    const audioFile = await ensureShortAudio(shortDocument, shortId, language);
+    const audioFile = await ensureShortAudio(
+      shortDocument,
+      shortId,
+      language,
+      requestBody.speaker
+    );
     res.json({
       audioFile: audioFile.file,
       audioUrl: `/api/shorts/${shortId}/audio/${language}/file`,
       language,
+      speaker: audioFile.speaker,
       duration: audioFile.duration,
     });
   } catch (error) {
@@ -695,6 +1024,7 @@ router.get('/:shortId/audio/:language', authenticate, async (req, res) => {
       audioFile: audioFile.file,
       audioUrl: `/api/shorts/${shortId}/audio/${language}/file`,
       language,
+      speaker: audioFile.speaker,
       duration: audioFile.duration,
     });
   } catch (error) {
@@ -849,6 +1179,13 @@ router.post('/:shortId/render', authenticate, async (req, res) => {
     res.status(400).json({ error: 'Platform and resolution must be text values.' });
     return;
   }
+  if (
+    requestBody.speaker !== undefined &&
+    (typeof requestBody.speaker !== 'string' || !requestBody.speaker.trim())
+  ) {
+    res.status(400).json({ error: 'Speaker must be a non-empty text value.' });
+    return;
+  }
 
   let shortDocument;
   try {
@@ -880,7 +1217,12 @@ router.post('/:shortId/render', authenticate, async (req, res) => {
       return;
     }
 
-    const audioFile = await ensureShortAudio(shortDocument, shortId, language);
+    const audioFile = await ensureShortAudio(
+      shortDocument,
+      shortId,
+      language,
+      requestBody.speaker
+    );
     const sceneDuration = shortDocument.scenes.reduce(
       (total, scene) => total + scene.duration,
       0
@@ -942,6 +1284,7 @@ router.post('/:shortId/render', authenticate, async (req, res) => {
       audioDuration: audioFile.duration,
       audioUrl: `/api/shorts/${shortId}/audio/${language}/file`,
       language,
+      speaker: audioFile.speaker,
       platform,
       resolution,
     });
