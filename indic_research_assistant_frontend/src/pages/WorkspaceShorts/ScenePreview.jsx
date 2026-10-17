@@ -124,6 +124,7 @@ export default function ScenePreview({
   };
 
   const changeLanguage = useCallback(async (nextLanguage) => {
+    console.log("nextLanguage", nextLanguage)
     const previousLanguage = language;
     setLanguage(nextLanguage);
     setSceneError('');
@@ -234,6 +235,8 @@ export default function ScenePreview({
   const selectedSpeakerLabel = SPEAKERS[language].find(
     ([value]) => value === selectedSpeaker
   )?.[1] || selectedSpeaker;
+
+  console.log("language", language)
 
   return (
     <section className="space-y-5">

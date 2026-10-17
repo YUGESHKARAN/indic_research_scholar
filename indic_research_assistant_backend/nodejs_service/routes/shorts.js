@@ -495,19 +495,22 @@ router.post('/create', authenticate, handleScriptUpload, async (req, res) => {
     );
     await shortDocument.save();
 
-    res.status(201).json({
-      shortId: shortDocument.shortId,
-      title: shortDocument.title,
-      narrationLanguage: shortDocument.narrationLanguage,
-      scenes: shortDocument.scenes.map((scene) => ({
+    // console.log('shortDocument', shortDocument)
+     // Plain object: no Mongoose internals, Maps become plain objects
+    const shortObject = shortDocument.toObject({ flattenMaps: true });
+   res.status(201).json({
+      shortId: shortObject.shortId,
+      title: shortObject.title,
+      narrationLanguage: shortObject.narrationLanguage,
+      scenes: shortObject.scenes.map((scene) => ({
         ...scene,
         narrationTranslations: getNarrationTranslations(scene),
       })),
-      totalDuration: shortDocument.duration,
+      totalDuration: shortObject.duration,
       targetDurationSeconds: preparedScript.targetDurationSeconds,
       requestedTargetDurationSeconds: targetDurationSeconds,
-      platform: shortDocument.platform,
-      resolution: shortDocument.resolution,
+      platform: shortObject.platform,
+      resolution: shortObject.resolution,
     });
   } catch (error) {
     if (generatedScenes.length > 0 && shortDocument) {
@@ -522,12 +525,14 @@ router.post('/create', authenticate, handleScriptUpload, async (req, res) => {
       return;
     }
     console.error('Short creation failed:', error);
+    console.log('Short creation failed:', error);
     res.status(500).json({ error: 'Failed to create short.' });
   }
 });
 
 router.post('/:shortId/translate/:language', authenticate, async (req, res) => {
   const { shortId, language } = req.params;
+  console.log("language", language)
   if (!isValidShortId(shortId)) {
     res.status(400).json({ error: 'Invalid short ID.' });
     return;
@@ -551,7 +556,7 @@ router.post('/:shortId/translate/:language', authenticate, async (req, res) => {
       return;
     }
 
-    const sourceLanguage = shortDocument.narrationLanguage || 'hindi';
+    const sourceLanguage = shortDocument.narrationLanguage || 'english';
     if (!LANGUAGES.has(sourceLanguage)) {
       res.status(400).json({ error: 'Unsupported source narration language.' });
       return;

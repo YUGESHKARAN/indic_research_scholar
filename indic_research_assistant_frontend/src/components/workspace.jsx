@@ -400,10 +400,11 @@ function WorkspaceShell() {
                       <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Your research command center</h2>
                     </div>
                     <Link
-                      to="/workspace/qa"
+                      to="/workspace/shorts"
                       className="inline-flex items-center justify-center rounded-xl bg-[#f6c76e] px-4 py-2.5 text-sm font-medium text-slate-900 transition hover:bg-[#f7d27d]"
                     >
-                      Open Q&A studio
+                      {/* Open Q&A studio */}
+                      Open Shorts studio
                     </Link>
                   </div>
                 </section>
