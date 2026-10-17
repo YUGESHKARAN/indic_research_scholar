@@ -39,10 +39,10 @@ app.use((err, req, res, next) => {
 });
  
 // const PORT = process.env.PORT || 3000;
-app.listen(3000, () => {
-  console.log(`Node API running on port 3000`);
-});
+// app.listen(3000, () => {
+//   console.log(`Node API running on port 3000`);
+// });
 
 
-// module.exports = app;
-// module.exports.handler = serverless(app);
+module.exports = app;
+module.exports.handler = serverless(app);
