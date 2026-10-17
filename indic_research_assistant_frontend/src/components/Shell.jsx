@@ -49,7 +49,7 @@ export function Header({ variant = 'default' }) {
               >
                 Workspace
               </Link>
-              <Link
+              {/* <Link
                 to="/ingest"
                 className="font-body text-xs md:text-sm px-2 py-0.5 md:px-4 md:py-2 rounded-md text-[#F1EEE4]/80 hover:text-[#F1EEE4]
                            hover:bg-[#181826] transition-colors"
@@ -62,7 +62,7 @@ export function Header({ variant = 'default' }) {
                            hover:bg-[#181826] transition-colors"
               >
                 Ask
-              </Link>
+              </Link> */}
             </nav>
           )}
 

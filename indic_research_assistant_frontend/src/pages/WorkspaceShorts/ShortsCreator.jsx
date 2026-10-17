@@ -45,6 +45,7 @@ export default function ShortsCreator({ onCreated, onCancel }) {
     try {
       const { data } = await api.post('/api/shorts/create', formData);
       onCreated({ ...data, audioFiles: [], status: 'draft' });
+      console.log("data", data)
     } catch (requestError) {
       setError(errorMessage(requestError));
     } finally {

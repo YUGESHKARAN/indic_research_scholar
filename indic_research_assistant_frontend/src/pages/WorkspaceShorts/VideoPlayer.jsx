@@ -26,8 +26,12 @@ export default function VideoPlayer({
   const [language, setLanguage] = useState(selectedLanguage);
   const [readyVideoKey, setReadyVideoKey] = useState(null);
   const [errorVideoKey, setErrorVideoKey] = useState(null);
+    const [attempt, setAttempt] = useState(0);
+  
   const videoRef = useRef(null);
-  const videoKey = `${short.videoUrl}-${short.videoLanguage || 'silent'}-${rendering ? 'rendering' : 'idle'}`;
+  // const videoKey = `${short.videoUrl}-${short.videoLanguage || 'silent'}-${rendering ? 'rendering' : 'idle'}`;
+  //  const videoKey = `${short.videoUrl}-${short.videoLanguage || 'silent'}`;
+   const videoKey = `${short.videoUrl}-${short.videoLanguage || 'silent'}-${attempt}`;
   const videoReady = readyVideoKey === videoKey;
   const videoLoadError = errorVideoKey === videoKey;
 
@@ -48,6 +52,18 @@ export default function VideoPlayer({
     return url.toString();
   })() : '';
 
+  const renderSelectedLanguage = () => onRenderLanguage(language);
+    const markReady = () => {
+    setReadyVideoKey(videoKey);
+    setErrorVideoKey(null);
+  };
+
+    const videoSrc = short.videoUrl
+    ? `${apiUrl(short.videoUrl)}${short.videoUrl.includes('?') ? '&' : '?'}attempt=${attempt}`
+    : '';
+
+  // console.log("videoLoadError", videoLoadError)
+  // console.log("downloadUrl", downloadUrl)
   return (
     <section className="mx-auto max-w-6xl space-y-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
@@ -75,7 +91,8 @@ export default function VideoPlayer({
           {!rendering && (
             <button
               type="button"
-              onClick={onRetry}
+              // onClick={onRetry}
+              onClick={renderSelectedLanguage}
               className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-rose-300/20 px-3 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-300/10"
             >
               <FiRefreshCw size={13} />
@@ -89,6 +106,26 @@ export default function VideoPlayer({
         <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/30">
           <div className="relative aspect-video">
             {short.videoUrl ? (
+              // <video
+              //   ref={videoRef}
+              //   key={videoKey}
+              //   controls
+              //   playsInline
+              //   preload="auto"
+              //   crossOrigin="use-credentials"
+              //   // src={apiUrl(short.videoUrl)}
+              //   src={videoSrc}
+              //   // onCanPlay={() => {
+              //   //   setReadyVideoKey(videoKey);
+              //   //   setErrorVideoKey(null);
+              //   // }}
+              //   onLoadedData={markReady}
+              //   onPlay={markReady}
+              //   onError={() => setErrorVideoKey(videoKey)}
+              //   className="h-full w-full bg-black"
+              // >
+              //   Your browser does not support video playback.
+              // </video>
               <video
                 ref={videoRef}
                 key={videoKey}
@@ -96,16 +133,15 @@ export default function VideoPlayer({
                 playsInline
                 preload="auto"
                 crossOrigin="use-credentials"
-                src={apiUrl(short.videoUrl)}
-                onCanPlay={() => {
-                  setReadyVideoKey(videoKey);
-                  setErrorVideoKey(null);
+                src={videoSrc}
+                onLoadedData={markReady}
+                onCanPlay={markReady}
+                onError={(event) => {
+                  console.warn('video error', event.currentTarget.error);
+                  setErrorVideoKey(videoKey);
                 }}
-                onError={() => setErrorVideoKey(videoKey)}
                 className="h-full w-full bg-black"
-              >
-                Your browser does not support video playback.
-              </video>
+              ></video>
             ) : (
               <div className="flex h-full flex-col items-center justify-center px-6 text-center">
                 {rendering ? (
@@ -119,7 +155,8 @@ export default function VideoPlayer({
                     <p className="text-sm text-slate-300">Your video is not rendered yet.</p>
                     <button
                       type="button"
-                      onClick={onRetry}
+                      // onClick={onRetry}
+                      onClick={renderSelectedLanguage}
                       className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#f6c76e] px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
                     >
                       <FiRefreshCw size={14} />
@@ -130,9 +167,13 @@ export default function VideoPlayer({
               </div>
             )}
             {short.videoUrl && (rendering || (!videoReady && !videoLoadError)) && (
-              <div
+              // <div
+              //   role="status"
+              //   className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 px-6 text-center"
+              // >
+             <div
                 role="status"
-                className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 px-6 text-center"
+                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90 px-6 text-center"
               >
                 <FiLoader className="animate-spin text-amber-200" size={30} />
                 <p className="mt-4 font-medium text-white">
@@ -151,12 +192,21 @@ export default function VideoPlayer({
                 className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 px-6 text-center"
               >
                 <p className="text-sm text-rose-200">The video could not be loaded.</p>
-                <button
+                {/* <button
                   type="button"
                   onClick={() => {
                     setErrorVideoKey(null);
                     setReadyVideoKey(null);
                     if (videoRef.current) videoRef.current.load();
+                  }}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#f6c76e] px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+                > */}
+                                <button
+                  type="button"
+                  onClick={() => {
+                    setErrorVideoKey(null);
+                    setReadyVideoKey(null);
+                    setAttempt((n) => n + 1);
                   }}
                   className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#f6c76e] px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
                 >

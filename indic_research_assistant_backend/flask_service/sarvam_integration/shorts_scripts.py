@@ -230,7 +230,7 @@ def prepare_script():
             "error": "requestedSceneDurations must be valid scene timings that sum to targetDurationSeconds."
         }), 400
 
-    system_prompt = """You are an expert short-form educational video scriptwriter.
+    system_prompt = """You are an expert short-form educational, entertainment, GTM (go to market) video scriptwriter.
     Create a clear, engaging explainer, not a reading of the source document.
     Use the uploaded document as factual reference and the user's description as the
     requested topic, audience, angle, and language. If the source contains a target

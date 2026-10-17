@@ -227,6 +227,52 @@ export default function WorkspaceShorts() {
     }
   };
 
+  // const startRender = async (
+  //   shortData,
+  //   language,
+  //   speaker,
+  //   platform,
+  //   resolution
+  // ) => {
+  //   setRendering(true);
+  //   setRenderError('');
+  //   try {
+  //     const { data } = await api.post(
+  //       `/api/shorts/${shortData.shortId}/render`,
+  //       { language, speaker, platform, resolution },
+  //     );
+  //     setShort((current) => {
+  //       if (!current || current.shortId !== shortData.shortId) return current;
+  //       const audioFiles = (current.audioFiles || []).filter(
+  //         (audio) => audio.language !== language,
+  //       );
+  //       audioFiles.push({
+  //         language,
+  //         speaker: data.speaker,
+  //         file: data.audioFile,
+  //         duration: data.audioDuration,
+  //       });
+  //       return {
+  //         ...current,
+  //         audioFiles,
+  //         platform: data.platform,
+  //         resolution: data.resolution,
+  //         duration: data.duration,
+  //         videoUrl: data.videoUrl,
+  //         videoLanguage: language,
+  //         status: 'ready',
+  //       };
+  //     });
+  //     setSelectedLanguage(language);
+  //     await refreshShorts();
+  //     return true;
+  //   } catch (error) {
+  //     setRenderError(getErrorMessage(error, 'Video rendering failed.'));
+  //     return false;
+  //   } finally {
+  //     setRendering(false);
+  //   }
+  // };
   const startRender = async (
     shortData,
     language,
@@ -241,30 +287,35 @@ export default function WorkspaceShorts() {
         `/api/shorts/${shortData.shortId}/render`,
         { language, speaker, platform, resolution },
       );
+
+      // Cache-bust so the player reloads when the same language is re-rendered
+      const videoUrl = `${data.videoUrl}&v=${Date.now()}`;
+
       setShort((current) => {
         if (!current || current.shortId !== shortData.shortId) return current;
-        const audioFiles = (current.audioFiles || []).filter(
-          (audio) => audio.language !== language,
-        );
-        audioFiles.push({
-          language,
-          speaker: data.speaker,
-          file: data.audioFile,
-          duration: data.audioDuration,
-        });
+        const audioFiles = [
+          ...(current.audioFiles || []).filter(
+            (audio) => audio.language !== language,
+          ),
+          {
+            language,
+            speaker: data.speaker,
+            file: data.audioFile,
+            duration: data.audioDuration,
+          },
+        ];
         return {
           ...current,
           audioFiles,
           platform: data.platform,
           resolution: data.resolution,
           duration: data.duration,
-          videoUrl: data.videoUrl,
+          videoUrl,
           videoLanguage: language,
           status: 'ready',
         };
       });
       setSelectedLanguage(language);
-      await refreshShorts();
       return true;
     } catch (error) {
       setRenderError(getErrorMessage(error, 'Video rendering failed.'));
@@ -273,7 +324,6 @@ export default function WorkspaceShorts() {
       setRendering(false);
     }
   };
-
   const saveScenesAndRender = async (
     scenes,
     language,
@@ -363,7 +413,8 @@ export default function WorkspaceShorts() {
       )}
       {view === 'player' && short && (
         <VideoPlayer
-          key={`${short.shortId}-${selectedLanguage}-${short.audioFiles?.length || 0}-${short.videoUrl || 'pending'}`}
+          // key={`${short.shortId}-${selectedLanguage}-${short.audioFiles?.length || 0}-${short.videoUrl || 'pending'}`}
+          key={short.shortId}
           short={short}
           selectedLanguage={selectedLanguage}
           rendering={rendering}
