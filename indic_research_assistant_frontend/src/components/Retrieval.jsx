@@ -12,8 +12,8 @@ import VoiceInput from "./VoiceInput";
 import SpeakerSelect from "./SpeakerSelect";
 // import { motion } from "framer-motion";
 
-const FLASK_BASE_URL = 'http://127.0.0.1:5000'
-// const FLASK_BASE_URL = "https://indic-research-scholar.onrender.com";
+// const FLASK_BASE_URL = 'http://127.0.0.1:5000'
+const FLASK_BASE_URL = "https://indic-research-scholar.onrender.com";
 
 const LANGUAGES = [
   { code: "en-IN", label: "English" },
