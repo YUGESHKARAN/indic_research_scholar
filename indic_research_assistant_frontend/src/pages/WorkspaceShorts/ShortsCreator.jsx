@@ -54,7 +54,7 @@ export default function ShortsCreator({ onCreated, onCancel }) {
   };
 
   return (
-    <section className="mx-auto max-w-5xl">
+    <section className="mx-auto ">
       <div className="mb-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-300">New project</p>
         <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Create a Short</h2>
@@ -63,7 +63,7 @@ export default function ShortsCreator({ onCreated, onCancel }) {
 
       <form
         onSubmit={handleSubmit}
-        className="grid gap-5 rounded-3xl border border-white/10 bg-slate-950/55 p-5 shadow-xl md:grid-cols-[1.15fr_0.85fr] md:p-7"
+        className="grid gap-5 md:gap-12 rounded-xl border border-white/10 bg-slate-950/55 p-5 shadow-xl md:grid-cols-[1.15fr_0.85fr] md:p-7"
       >
         <div className="space-y-5">
           <div>

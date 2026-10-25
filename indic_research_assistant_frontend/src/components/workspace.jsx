@@ -386,14 +386,14 @@ function WorkspaceShell() {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6">
+          <main className="flex-1">
             {activeId === 'qa' ? (
               <Retrieval embedded onControlsChange={handleQAControlsChange} />
             ) : activeId === 'shorts' ? (
               <WorkspaceShorts />
             ) : (
-              <div className="mx-auto max-w-6xl space-y-6">
-                <section className="rounded-3xl border border-white/10 bg-slate-950/60 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.45)]">
+              <div className="mx-auto pt-4 px-4 max-w-6xl space-y-6">
+                <section className="rounded-xl border border-white/10 bg-slate-950/60 p-5 shadow-[0_20px_80px_rgba(15,23,42,0.45)]">
                   <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.26em] text-amber-400">Workspace overview</p>
@@ -415,7 +415,7 @@ function WorkspaceShell() {
                     { title: 'Q&A tasks', value: '8', text: 'Grounded conversations this week' },
                     { title: 'Presentation', value: '2', text: 'Drafts in progress' },
                   ].map((item) => (
-                    <div key={item.title} className="rounded-2xl border border-white/10 bg-slate-950/60 p-5">
+                    <div key={item.title} className="rounded-xl border border-white/10 bg-slate-950/60 p-5">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">{item.title}</p>
                       <p className="mt-4 text-3xl font-semibold text-white">{item.value}</p>
                       <p className="mt-2 text-sm text-slate-400">{item.text}</p>

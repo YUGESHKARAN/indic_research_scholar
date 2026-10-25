@@ -809,7 +809,7 @@ function Retrieval({ embedded = false, onControlsChange }) {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.06, duration: 0.22 }}
-              className={`flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl ${embedded ? 'min-h-[calc(100dvh-6rem)] md:min-h-0 md:h-[calc(100dvh-7rem)] lg:col-span-2' : 'min-h-[500px] md:h-[min(70vh,760px)]'}`}
+              className={`flex flex-col overflow-hidden  md:bg-slate-950/70 shadow-[0_20px_70px_rgba(0,0,0,0.25)] backdrop-blur-xl ${embedded ? 'min-h-[calc(103dvh-6rem)] min-h-0 lg:col-span-2' : 'min-h-[500px] md:h-[min(70vh,780px)]'}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/10 px-3 py-3 md:px-4">
                 <div>
