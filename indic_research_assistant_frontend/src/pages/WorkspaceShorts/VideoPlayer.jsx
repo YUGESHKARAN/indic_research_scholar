@@ -65,7 +65,7 @@ export default function VideoPlayer({
   // console.log("videoLoadError", videoLoadError)
   // console.log("downloadUrl", downloadUrl)
   return (
-    <section className="mx-auto max-w-6xl space-y-5">
+    <section className="mx-auto md:mx-0 max-w-6xl space-y-5">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-300">Render studio</p>

@@ -363,7 +363,7 @@ export default function WorkspaceShorts() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto p-4 max-w-7xl space-y-6">
       {view !== 'library' && (
         <button
           type="button"

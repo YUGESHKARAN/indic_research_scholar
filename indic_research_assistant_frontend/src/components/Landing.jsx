@@ -77,8 +77,9 @@ function Landing() {
         </h1>
 
         <p className="font-body text-sm md:text-lg text-[#F1EEE4]/70 max-w-xl mt-6 leading-relaxed">
-          Upload an advanced research document. Walk through it, question it, and understand
-          it — entirely in the Indic language you think in.
+         
+          Indic Research Studio helps you manage, understand, and explore your personal document knowledge and
+          generate editable Indic short videos directly from your documents.
         </p>
 
         {/* Signature: the same idea, in six scripts */}
