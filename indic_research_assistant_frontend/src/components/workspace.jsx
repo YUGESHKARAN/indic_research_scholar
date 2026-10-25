@@ -316,7 +316,7 @@ function WorkspaceShell() {
                   {sidebarOpen ? <FiX size={16} /> : <FiMenu size={16} />}
                 </button>
 
-                <div>
+                <div className='md:hidden'>
                   <p className="text-[10px] uppercase tracking-[0.24em] text-amber-400/80">Research Studio</p>
                   <h1 className="text-base font-semibold text-white md:text-lg">
                     {activeId === 'qa'
