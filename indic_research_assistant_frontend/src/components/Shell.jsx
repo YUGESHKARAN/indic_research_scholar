@@ -35,7 +35,7 @@ export function Header({ variant = 'default' }) {
             अ
           </span>
           <span className="font-body text-xs md:text-sm text-[#F1EEE4] tracking-wide">
-            Indic Research <br className='block md:hidden'/> Assistant
+            Indic Content <br className='block md:hidden'/> Studio
           </span>
         </Link>
 

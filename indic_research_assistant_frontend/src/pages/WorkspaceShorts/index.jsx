@@ -5,6 +5,7 @@ import ShortsCreator from './ShortsCreator';
 import ScenePreview from './ScenePreview';
 import VideoPlayer from './VideoPlayer';
 import { displayDuration, getErrorMessage } from './shortsUtils';
+import useShorts from '../../hooks/useShorts';
 
 function ShortsLibrary({
   shorts,
@@ -131,9 +132,10 @@ function ShortsLibrary({
 }
 
 export default function WorkspaceShorts() {
-  const [shorts, setShorts] = useState([]);
-  const [libraryLoading, setLibraryLoading] = useState(true);
-  const [libraryError, setLibraryError] = useState('');
+  const {shorts, setShorts, libraryLoading, setLibraryLoading, libraryError, setLibraryError, loadShorts, refreshShorts} = useShorts()
+  // const [shorts, setShorts] = useState([]);
+  // const [libraryLoading, setLibraryLoading] = useState(true);
+  // const [libraryError, setLibraryError] = useState('');
   const [view, setView] = useState('library');
   const [short, setShort] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('hindi');
@@ -142,39 +144,39 @@ export default function WorkspaceShorts() {
   const [openingShort, setOpeningShort] = useState(false);
   const [deletingShortId, setDeletingShortId] = useState('');
 
-  const loadShorts = useCallback(async () => {
-    const { data } = await api.get('/api/shorts/list');
-    return data.shorts || [];
-  }, []);
+  // const loadShorts = useCallback(async () => {
+  //   const { data } = await api.get('/api/shorts/list');
+  //   return data.shorts || [];
+  // }, []);
 
-  const refreshShorts = useCallback(async () => {
-    setLibraryLoading(true);
-    setLibraryError('');
-    try {
-      setShorts(await loadShorts());
-    } catch (error) {
-      setLibraryError(getErrorMessage(error, 'Could not load your Shorts.'));
-    } finally {
-      setLibraryLoading(false);
-    }
-  }, [loadShorts]);
+  // const refreshShorts = useCallback(async () => {
+  //   setLibraryLoading(true);
+  //   setLibraryError('');
+  //   try {
+  //     setShorts(await loadShorts());
+  //   } catch (error) {
+  //     setLibraryError(getErrorMessage(error, 'Could not load your Shorts.'));
+  //   } finally {
+  //     setLibraryLoading(false);
+  //   }
+  // }, [loadShorts]);
 
-  useEffect(() => {
-    let active = true;
-    loadShorts()
-      .then((items) => {
-        if (active) setShorts(items);
-      })
-      .catch((error) => {
-        if (active) setLibraryError(getErrorMessage(error, 'Could not load your Shorts.'));
-      })
-      .finally(() => {
-        if (active) setLibraryLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [loadShorts]);
+  // useEffect(() => {
+  //   let active = true;
+  //   loadShorts()
+  //     .then((items) => {
+  //       if (active) setShorts(items);
+  //     })
+  //     .catch((error) => {
+  //       if (active) setLibraryError(getErrorMessage(error, 'Could not load your Shorts.'));
+  //     })
+  //     .finally(() => {
+  //       if (active) setLibraryLoading(false);
+  //     });
+  //   return () => {
+  //     active = false;
+  //   };
+  // }, [loadShorts]);
 
   const startNewShort = () => {
     setShort(null);

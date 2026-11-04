@@ -10,6 +10,7 @@ import { FontImports, Header } from "./Shell";
 import api from "../instances/axiosInstance";
 import VoiceInput from "./VoiceInput";
 import SpeakerSelect from "./SpeakerSelect";
+import useDocument from "../hooks/useDocument";
 // import { motion } from "framer-motion";
 
 // const FLASK_BASE_URL = 'http://127.0.0.1:5000'
@@ -291,9 +292,10 @@ function MarkdownContent({ content }) {
 function Retrieval({ embedded = false, onControlsChange }) {
   const navigate = useNavigate();
 
-  const [docs, setDocs] = useState([]);
-  const [docsStatus, setDocsStatus] = useState("loading");
+  // const [docs, setDocs] = useState([]);
+  // const [docsStatus, setDocsStatus] = useState("loading");
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const {docs, docsStatus} = useDocument();
 
   const [query, setQuery] = useState("");
   const [targetLang, setTargetLang] = useState("hi-IN");
@@ -323,21 +325,21 @@ function Retrieval({ embedded = false, onControlsChange }) {
     });
   }, [conversation]);
 
-  useEffect(() => {
-    const fetchDocs = async () => {
-      try {
-        const res = await api.get("/api/docs");
-        setDocs(res.data.docs || []);
-        setDocsStatus("ready");
-      } catch (err) {
-        console.log("DOCS ERROR:", err);
-        console.log("Status:", err.response?.status);
-        console.log("Data:", err.response?.data);
-        setDocsStatus("error");
-      }
-    };
-    fetchDocs();
-  }, []);
+  // useEffect(() => {
+  //   const fetchDocs = async () => {
+  //     try {
+  //       const res = await api.get("/api/docs");
+  //       setDocs(res.data.docs || []);
+  //       setDocsStatus("ready");
+  //     } catch (err) {
+  //       // console.log("DOCS ERROR:", err);
+  //       // console.log("Status:", err.response?.status);
+  //       // console.log("Data:", err.response?.data);
+  //       setDocsStatus("error");
+  //     }
+  //   };
+  //   fetchDocs();
+  // }, []);
 
   const targetLabel = useMemo(() => {
     return (
