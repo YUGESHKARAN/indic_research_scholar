@@ -158,7 +158,7 @@ function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
             <p className="text-[10px] font-medium uppercase tracking-[0.22em] text-amber-400/80">
               Workspace
             </p>
-            <p className="mt-0.5 text-sm font-semibold text-white">Indic Scholar</p>
+            <p className="mt-0.5 text-sm font-semibold text-white">Indic Studio</p>
           </div>
         </Link>
 

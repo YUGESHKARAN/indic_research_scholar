@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./assets/indic_resesrch_assistant_logo.png" width="200" height="120" alt="Indic Research Scholar">
+  <img src="./assets/indic_studio.png" width="200" height="120" alt="Indic Content Studio">
 </div>
 
 <div align="center">
@@ -15,7 +15,7 @@
 
 </div>
 
-Indic Research Scholar helps students, researchers, and readers explore academic material in Indic languages. Upload a paper, ask grounded questions, and use speech input and spoken answers. The **Shorts Studio** turns a script into an editable explainer with generated scenes, narration, and a downloadable video with synchronized audio.
+Indic Content Studio helps creators, students, researchers and readers explore academic material in Indic languages. Upload a paper, ask grounded questions, and use speech input and spoken answers. The **Shorts Studio** turns a script into an editable explainer with generated scenes, narration, and a downloadable video with synchronized audio.
 
 ## Highlights
 

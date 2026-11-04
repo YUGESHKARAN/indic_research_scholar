@@ -69,11 +69,11 @@ function Landing() {
         {/* Hero */}
         <section className="max-w-6xl overflow-x-hidden  mx-auto px-6 pt-10 md:pt-20 pb-12 md:pb-24">
         <p className="font-mono text-[10px] md:text-xs tracking-[0.2em] text-[#E8A33D] uppercase mb-6">
-          For students, scholars &amp; researchers
+          For creators, students, scholars &amp; researchers
         </p>
 
         <h1 className="font-display text-4xl md:text-7xl font-semibold leading-[1.05] max-w-3xl">
-          Research, in your own language.
+          Create, in your own language.
         </h1>
 
         <p className="font-body text-sm md:text-lg text-[#F1EEE4]/70 max-w-xl mt-6 leading-relaxed">
