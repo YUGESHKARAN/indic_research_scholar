@@ -18,6 +18,8 @@ import Retrieval from './Retrieval';
 import SpeakerSelect from './SpeakerSelect';
 import { FontImports } from './Shell';
 import WorkspaceShorts from '../pages/WorkspaceShorts';
+import useDocument from '../hooks/useDocument';
+import useShorts from '../hooks/useShorts';
 
 const navItems = [
   { id: 'overview', label: 'Overview', icon: FiBookOpen, to: '/workspace' },
@@ -28,6 +30,8 @@ const navItems = [
   // { id: 'settings', label: 'Settings', icon: FiSettings, to: '/workspace/settings' },
 ];
 
+
+
 function QATaskControls({ controls, onUpload }) {
   if (!controls) {
     return (
@@ -36,6 +40,8 @@ function QATaskControls({ controls, onUpload }) {
       </div>
     );
   }
+
+  
 
   return (
     <div className="ml-2 mt-1 space-y-3 rounded-r-lg border-l border-white/10 bg-white/[0.035] py-3 pl-3 pr-2">
@@ -140,6 +146,7 @@ function QATaskControls({ controls, onUpload }) {
 
 function WorkspaceSidebar({ isOpen, onClose, activeId, qaControls, onUpload }) {
   const [qaExpanded, setQAExpanded] = useState(activeId === 'qa');
+  
 
   useEffect(() => {
     if (activeId === 'qa') setQAExpanded(true);
@@ -267,6 +274,10 @@ function WorkspaceShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [qaControls, setQAControls] = useState(null);
+  const { docs, docLoading} = useDocument();
+  const {shorts, libraryLoading} = useShorts();
+
+  // console.log("shorts", shorts)
 
   const handleQAControlsChange = useCallback((controls) => {
     setQAControls(controls);
@@ -397,7 +408,7 @@ function WorkspaceShell() {
                   <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                     <div>
                       <p className="text-[10px] uppercase tracking-[0.26em] text-amber-400">Workspace overview</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Your research command center</h2>
+                      <h2 className="mt-2 text-2xl font-semibold text-white md:text-3xl">Your content studio metrics</h2>
                     </div>
                     <Link
                       to="/workspace/shorts"
@@ -409,17 +420,19 @@ function WorkspaceShell() {
                   </div>
                 </section>
 
-                <section className="grid gap-4 md:grid-cols-3">
+                <section className="grid gap-4 md:grid-cols-2">
                   {[
-                    { title: 'Documents', value: '12', text: 'Active in your workspace' },
-                    { title: 'Q&A tasks', value: '8', text: 'Grounded conversations this week' },
-                    { title: 'Presentation', value: '2', text: 'Drafts in progress' },
+                    { title: 'Q&A - Documents', value: docLoading?'Loading...': docs?.length??0,  text: 'Active in your workspace', to:'/workspace/qa' },
+                    // { title: 'Q&A tasks', value: '8', text: 'Grounded conversations this week' },
+                    { title: 'Short - videos', value: libraryLoading?'Loading ...': shorts?.length??0, text: 'Final + Drafts shorts', to:'/workspace/shorts' },
                   ].map((item) => (
-                    <div key={item.title} className="rounded-xl border border-white/10 bg-slate-950/60 p-5">
+                    <Link 
+                    to={item.to}
+                    key={item.title} className="rounded-xl border border-white/10 bg-slate-950/60 p-5">
                       <p className="text-[10px] uppercase tracking-[0.2em] text-slate-400">{item.title}</p>
-                      <p className="mt-4 text-3xl font-semibold text-white">{item.value}</p>
+                      <p className={`mt-4 text-3xl font-semibold ${libraryLoading?'text-slate-400':'text-white'}`}>{item.value}</p>
                       <p className="mt-2 text-sm text-slate-400">{item.text}</p>
-                    </div>
+                    </Link>
                   ))}
                 </section>
               </div>
